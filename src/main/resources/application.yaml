@@ -1,0 +1,62 @@
+
+spring:
+  application:
+    name: kpick
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/kpick?serverTimezone=UTC&characterEncoding=UTF-8&connectTimeout=5000&socketTimeout=5000
+
+    username: root
+    password: kolkol2233
+
+  jpa:
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQLDialect
+    database: mysql
+    hibernate:
+      ddl-auto: update
+    generate-ddl: false
+    properties:
+      hibernate:
+        format_sql: true
+        enable_lazy_load_no_trans: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+oauth2:
+  client-id: com.example.web
+  team-id: YOUR_TEAM_ID
+  key-id: YOUR_KEY_ID
+  private-key-path: classpath:keys/AuthKey_ABC123XYZ.p8
+  redirect-uri: https://api.example.com/auth/apple/callback
+  authorize-uri: https://appleid.apple.com/auth/authorize
+  scope:
+    - name
+    - email
+
+  web:
+    resources:
+      static-locations: file:uploads/images/ #file: ? ?? ??? ? ??? ? ???? ?? ???? ???? ????
+    cors:
+      allowed-origins: http://localhost:3000
+
+
+
+jwt:
+  secret: deut28v1-local-jwt-secret-key-fully-obey-the-lord-9xP4mQ7vL2sN8kT5awe2z
+  access-token-expiration: 86400000
+
+apple:
+  enabled : false
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
