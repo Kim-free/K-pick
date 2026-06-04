@@ -12,6 +12,7 @@ public class RankingEntryResponse {
     private int rank;
     private Long profileId;
     private String nickname;
+    private String profileImageUrl;
     private long score;
     private PointTierResponse pointTier;
     private Long threadCount;
@@ -22,6 +23,7 @@ public class RankingEntryResponse {
                 rank,
                 profile.getId(),
                 profile.getNickname(),
+                profile.getProfileImageUrl(),
                 score,
                 PointTierResponse.from(score),
                 null,
@@ -34,6 +36,7 @@ public class RankingEntryResponse {
                 rank,
                 profile.getId(),
                 profile.getNickname(),
+                profile.getProfileImageUrl(),
                 score,
                 null,
                 threadCount,

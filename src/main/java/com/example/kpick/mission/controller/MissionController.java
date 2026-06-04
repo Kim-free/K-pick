@@ -1,9 +1,7 @@
 package com.example.kpick.mission.controller;
 
-import com.example.kpick.mission.domain.MissionState;
 import com.example.kpick.mission.dto.req.SelectMissionOptionRequest;
 import com.example.kpick.mission.dto.res.MissionConfirmModalResponse;
-import com.example.kpick.mission.dto.res.MissionListResponse;
 import com.example.kpick.mission.dto.res.MissionRelatedContentResponse;
 import com.example.kpick.mission.dto.res.MissionRecommendationResponse;
 import com.example.kpick.mission.service.MissionQueryService;
@@ -16,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -27,14 +26,9 @@ public class MissionController {
 
     private final MissionQueryService missionQueryService;
 
-//    @GetMapping("/missions/status")
-//    public ResponseEntity<List<MissionListResponse>> getMissionsByStatus(@RequestParam MissionState missionStatus) {
-//        return ResponseEntity.ok(missionQueryService.getMissionsByStatus(missionStatus));
-//    }
-
     @GetMapping("/missions/recommendations")
     public ResponseEntity<List<MissionRecommendationResponse>> getMissionRecommendations(
-            @RequestParam(required = false) Long profileId,
+            @RequestAttribute("authenticatedProfileId") Long profileId,
             @RequestParam(required = false) Long programId
     ) {
         return ResponseEntity.ok(missionQueryService.getMissionRecommendations(profileId, programId));
@@ -48,7 +42,7 @@ public class MissionController {
     @GetMapping("/missions/{missionId}")
     public ResponseEntity<Object> getMissionDetails(
             @PathVariable Long missionId,
-            @RequestParam(required = false) Long profileId
+            @RequestAttribute("authenticatedProfileId") Long profileId
     ) {
         return ResponseEntity.ok(missionQueryService.getMissionDetails(missionId, profileId));
     }
@@ -56,18 +50,11 @@ public class MissionController {
     @PostMapping("/missions/{missionId}/options/select")
     public ResponseEntity<MissionConfirmModalResponse> selectMissionOption(
             @PathVariable Long missionId,
+            @RequestAttribute("authenticatedProfileId") Long profileId,
             @RequestBody SelectMissionOptionRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(missionQueryService.selectMissionOption(missionId, request));
+                .body(missionQueryService.selectMissionOption(missionId, request.withProfileId(profileId)));
     }
-
-//    @GetMapping("/missions/{missionId}/confirm-modal")
-//    public ResponseEntity<MissionConfirmModalResponse> getConfirmModal(
-//            @PathVariable Long missionId,
-//            @RequestParam Long profileId
-//    ) {
-//        return ResponseEntity.ok(missionQueryService.getConfirmModal(missionId, profileId));
-//    }
 
 }

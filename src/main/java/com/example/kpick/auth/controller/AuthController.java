@@ -1,6 +1,6 @@
 package com.example.kpick.auth.controller;
 
-import com.example.kpick.auth.dto.req.AppleLoginRequest;
+import com.example.kpick.auth.dto.req.OAuthLoginRequest;
 import com.example.kpick.auth.dto.res.AuthResponse;
 import com.example.kpick.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,17 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/apple")
-    public ResponseEntity<AuthResponse> loginWithApple(@RequestBody AppleLoginRequest request) {
+    public ResponseEntity<AuthResponse> loginWithApple(@RequestBody OAuthLoginRequest request) {
         return ResponseEntity.ok(authService.loginWithApple(request));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> loginWithGoogle(@RequestBody OAuthLoginRequest request) {
+        return ResponseEntity.ok(authService.loginWithGoogle(request));
+    }
+
+    @PostMapping("/kakao")
+    public ResponseEntity<AuthResponse> loginWithKakao(@RequestBody OAuthLoginRequest request) {
+        return ResponseEntity.ok(authService.loginWithKakao(request));
     }
 }

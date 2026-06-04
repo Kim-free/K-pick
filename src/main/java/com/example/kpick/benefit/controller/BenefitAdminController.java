@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/benefits")
@@ -22,9 +24,11 @@ public class BenefitAdminController {
 
     @GetMapping("/pick-histories")
     public ResponseEntity<PickHistoryResponse> getPickHistories(
-            @RequestParam(required = false) PickHistoryType pickHistoryType
+            @RequestParam(required = false) PickHistoryType pickHistoryType,
+            @RequestParam(required = false) LocalDate fromDate,
+            @RequestParam(required = false) LocalDate toDate
     ) {
-        return ResponseEntity.ok(benefitService.getPickHistories(pickHistoryType));
+        return ResponseEntity.ok(benefitService.getPickHistories(pickHistoryType, fromDate, toDate));
     }
 
     @GetMapping("/setting")

@@ -26,6 +26,9 @@ public class CommunityComment {
     private LocalDateTime createdAt;
     private int likeCount;
 
+    @Enumerated(EnumType.STRING)
+    private CommunityContentStatus contentStatus;
+
     public static CommunityComment toEntity(CommunityPostType postType, Long postId, CreateCommunityCommentRequest request) {
         return CommunityComment.builder()
                 .postType(postType)
@@ -34,6 +37,7 @@ public class CommunityComment {
                 .content(request.getContent().trim())
                 .createdAt(LocalDateTime.now())
                 .likeCount(0)
+                .contentStatus(CommunityContentStatus.NORMAL)
                 .build();
     }
 
@@ -45,5 +49,13 @@ public class CommunityComment {
         if (this.likeCount > 0) {
             this.likeCount--;
         }
+    }
+
+    public boolean isVisible() {
+        return this.contentStatus == null || this.contentStatus == CommunityContentStatus.NORMAL;
+    }
+
+    public void updateContentStatus(CommunityContentStatus contentStatus) {
+        this.contentStatus = contentStatus;
     }
 }

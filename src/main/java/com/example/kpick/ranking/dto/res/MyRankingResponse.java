@@ -13,6 +13,7 @@ import java.util.List;
 public class MyRankingResponse {
     private Long profileId;
     private String nickname;
+    private String profileImageUrl;
     private PointTierResponse pointTier;
     private int seasonRank;
     private int totalRank;
@@ -31,6 +32,7 @@ public class MyRankingResponse {
         return new MyRankingResponse(
                 profile.getId(),
                 profile.getNickname(),
+                profile.getProfileImageUrl(),
                 PointTierResponse.from(profile.getMissionPointValue()),
                 seasonRank,
                 totalRank,

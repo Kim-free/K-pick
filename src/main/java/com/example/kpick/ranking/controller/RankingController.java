@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -21,7 +22,7 @@ public class RankingController {
     @GetMapping
     public ResponseEntity<Object> getRankings(
             @RequestParam(defaultValue = "SEASON") String rankingType,
-            @RequestParam(required = false) Long profileId
+            @RequestAttribute("authenticatedProfileId") Long profileId
     ) {
         return ResponseEntity.ok(rankingService.getRankings(rankingType, profileId));
     }
@@ -31,9 +32,9 @@ public class RankingController {
         return ResponseEntity.ok(rankingService.getRankingProfile(profileId));
     }
 
-    @GetMapping("/profiles/{profileId}/growth")
+    @GetMapping("/profiles/me/growth")
     public ResponseEntity<GrowthRecordResponse> getGrowthRecord(
-            @PathVariable Long profileId,
+            @RequestAttribute("authenticatedProfileId") Long profileId,
             @RequestParam(defaultValue = "TOTAL") String pointScope
     ) {
         return ResponseEntity.ok(rankingService.getGrowthRecord(profileId, pointScope));

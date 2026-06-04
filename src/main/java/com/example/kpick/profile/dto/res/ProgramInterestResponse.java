@@ -35,6 +35,7 @@ public class ProgramInterestResponse {
         private Genre genre;
         private String season;
         private Boolean isOnAir;
+        private String thumbnailImageUrl;
 
         public static InterestProgramResponse from(Program program) {
             return new InterestProgramResponse(
@@ -43,7 +44,8 @@ public class ProgramInterestResponse {
                     program.getBroadcaster(),
                     program.getGenre(),
                     program.getSeason(),
-                    program.isOnAir()
+                    program.isOnAir(),
+                    program.getThumbnailImageUrl()
             );
         }
     }

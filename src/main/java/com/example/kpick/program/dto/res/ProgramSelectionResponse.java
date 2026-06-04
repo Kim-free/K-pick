@@ -15,6 +15,7 @@ public class ProgramSelectionResponse {
     private Long programId;
     private String programName;
     private Genre genre;
+    private String thumbnailImageUrl;
     private List<String> episodes;
 
     public static ProgramSelectionResponse from(Program program, List<String> episodes) {
@@ -22,6 +23,7 @@ public class ProgramSelectionResponse {
                 program.getId(),
                 program.getProgramName(),
                 program.getGenre(),
+                program.getThumbnailImageUrl(),
                 episodes
         );
     }

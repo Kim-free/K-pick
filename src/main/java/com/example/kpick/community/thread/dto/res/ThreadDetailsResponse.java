@@ -5,6 +5,7 @@ import com.example.kpick.community.dto.res.CommunityCommentResponse;
 import com.example.kpick.mission.domain.Mission;
 import com.example.kpick.program.domain.Program;
 import com.example.kpick.community.thread.domain.Thread;
+import com.example.kpick.profile.domain.Profile;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,29 +22,35 @@ public class ThreadDetailsResponse {
     private Long programId;
     private String programName;
     private Long profileId;
+    private String nickname;
+    private String profileImageUrl;
     private String title;
     private String description;
     private Boolean isNicknamePublic;
     private Boolean isSharedFromMission;
     private SharedMissionResponse sharedMission;
+    private List<String> imageUrls;
     private int viewCount;
     private int likeCount;
     private int commentCount;
     private List<CommunityCommentResponse> comments;
     private LocalDateTime createdAt;
 
-    public static ThreadDetailsResponse from(Thread thread, Program program, Mission mission, List<CommunityCommentResponse> comments) {
+    public static ThreadDetailsResponse from(Thread thread, Program program, Mission mission, Profile profile, List<CommunityCommentResponse> comments) {
         return new ThreadDetailsResponse(
                 CommunityPostType.THREAD,
                 thread.getId(),
                 thread.getProgramId(),
                 program.getProgramName(),
                 thread.getProfileId(),
+                profile.getNickname(),
+                profile.getProfileImageUrl(),
                 thread.getTitle(),
                 thread.getDescription(),
                 thread.isNicknamePublic(),
                 mission != null,
                 mission == null ? null : SharedMissionResponse.from(mission, program),
+                thread.getImageUrls(),
                 thread.getViewCount(),
                 thread.getLikeCount(),
                 thread.getCommentCount(),

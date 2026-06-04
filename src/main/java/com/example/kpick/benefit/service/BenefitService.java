@@ -17,6 +17,8 @@ import com.example.kpick.benefit.repository.BenefitSettingRepository;
 import com.example.kpick.benefit.repository.PickHistoryRepository;
 import com.example.kpick.profile.domain.Profile;
 import com.example.kpick.profile.repository.ProfileRepository;
+import com.example.kpick.notification.domain.PushNotificationType;
+import com.example.kpick.notification.service.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,7 @@ public class BenefitService {
     private final AdRewardHistoryRepository adRewardHistoryRepository;
     private final PickHistoryRepository pickHistoryRepository;
     private final ProfileRepository profileRepository;
+    private final PushNotificationService pushNotificationService;
 
     @Transactional(readOnly = true)
     public BenefitHomeResponse getBenefitHome(Long profileId) {
@@ -86,6 +89,7 @@ public class BenefitService {
             pickHistoryRepository.save(PickHistory.create(profileId, profile.getNickname(), PickHistoryType.ATTENDANCE_BONUS,
                     setting.getWeeklyAttendanceBonusPick(), "7일 개근 보너스"));
         }
+        notifyPointReward(profileId, earnedPick, "출석체크");
 
         return new AttendanceCheckResponse(
                 profileId,
@@ -112,6 +116,7 @@ public class BenefitService {
         profile.addCoin(setting.getAdRewardPick());
         pickHistoryRepository.save(PickHistory.create(profileId, profile.getNickname(), PickHistoryType.AD_REWARD,
                 setting.getAdRewardPick(), "광고 시청"));
+        notifyPointReward(profileId, setting.getAdRewardPick(), "광고 시청");
 
         int updatedWatchedCount = watchedCount + 1;
         return new AdRewardResponse(
@@ -139,20 +144,40 @@ public class BenefitService {
     }
 
     @Transactional(readOnly = true)
-    public PickHistoryResponse getPickHistories(PickHistoryType pickHistoryType) {
+    public PickHistoryResponse getPickHistories(PickHistoryType pickHistoryType, LocalDate fromDate, LocalDate toDate) {
+        validateDateRange(fromDate, toDate);
         List<PickHistory> histories = pickHistoryType == null
                 ? pickHistoryRepository.findAllByOrderByCreatedAtDesc()
                 : pickHistoryRepository.findByPickHistoryTypeOrderByCreatedAtDesc(pickHistoryType);
         List<PickHistoryResponse.PickHistoryItemResponse> items = histories.stream()
+                .filter(history -> fromDate == null || !history.getCreatedAt().toLocalDate().isBefore(fromDate))
+                .filter(history -> toDate == null || !history.getCreatedAt().toLocalDate().isAfter(toDate))
                 .map(PickHistoryResponse.PickHistoryItemResponse::from)
                 .toList();
         return new PickHistoryResponse(pickHistoryType, items.size(), items);
+    }
+
+    private void validateDateRange(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate != null && toDate != null && toDate.isBefore(fromDate)) {
+            throw new IllegalArgumentException("toDate cannot be before fromDate.");
+        }
     }
 
     private BenefitSetting getSetting() {
         return benefitSettingRepository.findAll().stream()
                 .findFirst()
                 .orElseGet(BenefitSetting::defaultSetting);
+    }
+
+    private void notifyPointReward(Long profileId, long earnedPick, String reason) {
+        pushNotificationService.notify(
+                profileId,
+                PushNotificationType.POINT_REWARD,
+                "Pick이 지급되었어요",
+                reason + " 보상으로 " + earnedPick + " Pick을 받았어요.",
+                "BENEFIT",
+                null
+        );
     }
 
     private BenefitSetting getOrCreateSetting() {

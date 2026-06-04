@@ -15,7 +15,7 @@ public class AppleIdentityTokenParser {
 
     private final AppleIdentityTokenVerifier appleIdentityTokenVerifier;
 
-    @Value("${oauth2.client-id}")
+    @Value("${oauth2.apple.client-id}")
     private String clientId;
 
     public AppleIdentityTokenParser(AppleIdentityTokenVerifier appleIdentityTokenVerifier) {

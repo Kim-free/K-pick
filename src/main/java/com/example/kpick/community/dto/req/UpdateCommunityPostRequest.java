@@ -17,11 +17,12 @@ public class UpdateCommunityPostRequest {
     private String title;
     private String description;
     private Boolean isNicknamePublic;
+    private List<String> imageUrls;
     private LocalDateTime dueDateTime;
     private List<OptionRequest> options;
 
     public UpdateThreadRequest toUpdateThreadRequest() {
-        return new UpdateThreadRequest(programId, title, description, isNicknamePublic);
+        return new UpdateThreadRequest(programId, title, description, isNicknamePublic, imageUrls);
     }
 
     public UpdateUserVoteRequest toUpdateUserVoteRequest() {

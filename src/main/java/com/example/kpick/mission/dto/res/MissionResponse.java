@@ -23,6 +23,7 @@ public class MissionResponse {
     private LocalDateTime dueDateTime;
     private int coinFee;
     private int attenderCount;
+    private Boolean isActive;
     private ResultPublishTiming resultPublishTiming;
     private MissionState missionState;
     private List<MissionOptionResponse> options;
@@ -37,6 +38,7 @@ public class MissionResponse {
                 mission.getDueDateTime(),
                 mission.getCoinFee(),
                 mission.getAttenderCount(),
+                !Boolean.FALSE.equals(mission.getIsActive()),
                 mission.getResultPublishTiming(),
                 mission.getMissionState(),
                 options.stream()

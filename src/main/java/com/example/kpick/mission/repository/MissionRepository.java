@@ -13,4 +13,5 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
     List<Mission> findByMissionStateAndProgramIdInOrderByIdDesc(MissionState missionState, List<Long> programIds);
     List<Mission> findByMissionStateAndProgramIdOrderByIdDesc(MissionState missionState, Long programId);
     long countByProfileId(Long profileId);
+    long countByProgramId(Long programId);
 }

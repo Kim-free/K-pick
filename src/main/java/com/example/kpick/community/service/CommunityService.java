@@ -34,6 +34,8 @@ import com.example.kpick.community.uservote.repository.UserVoteRepository;
 import com.example.kpick.community.uservote.repository.UserVoteSelectionRepository;
 import com.example.kpick.mission.domain.Mission;
 import com.example.kpick.mission.repository.MissionRepository;
+import com.example.kpick.notification.domain.PushNotificationType;
+import com.example.kpick.notification.service.PushNotificationService;
 import com.example.kpick.profile.domain.Profile;
 import com.example.kpick.profile.repository.ProfileRepository;
 import com.example.kpick.program.domain.Genre;
@@ -64,6 +66,7 @@ public class CommunityService {
     private final ProgramRepository programRepository;
     private final ProfileRepository profileRepository;
     private final MissionRepository missionRepository;
+    private final PushNotificationService pushNotificationService;
 
     @Transactional(readOnly = true)
     public List<CommunityPostResponse> getCommunityPosts() {
@@ -96,9 +99,11 @@ public class CommunityService {
     public List<CommunityPostResponse> getCommunityPostsByType(CommunityPostType postType, Long profileId) {
         return switch (postType) {
             case THREAD -> threadRepository.findAllByOrderByCreatedAtDesc().stream()
+                    .filter(CommunityPost::isVisible)
                     .map(this::toThreadPostResponse)
                     .toList();
             case USER_VOTE -> userVoteRepository.findAllByOrderByCreatedAtDesc().stream()
+                    .filter(CommunityPost::isVisible)
                     .map(userVote -> toUserVotePostResponse(userVote, profileId))
                     .toList();
         };
@@ -139,13 +144,13 @@ public class CommunityService {
         Long selectedUserVoteOptionId = profileId == null ? null : userVoteSelectionRepository.findByUserVoteIdAndProfileId(userVote.getId(), profileId)
                 .map(selection -> selection.getUserVoteOption().getId())
                 .orElse(null);
-        return CommunityPostResponse.fromUserVote(userVote, options, selectedUserVoteOptionId);
+        return CommunityPostResponse.fromUserVote(userVote, options, selectedUserVoteOptionId, findProfile(userVote.getProfileId()));
     }
 
     private CommunityPostResponse toThreadPostResponse(Thread thread) {
         Mission mission = thread.getMissionId() == null ? null : findMission(thread.getMissionId());
         Program missionProgram = mission == null ? null : findProgram(mission.getProgramId());
-        return CommunityPostResponse.fromThread(thread, mission, missionProgram);
+        return CommunityPostResponse.fromThread(thread, mission, missionProgram, findProfile(thread.getProfileId()));
     }
 
     @Transactional
@@ -160,7 +165,7 @@ public class CommunityService {
             }
             case USER_VOTE -> {
                 UserVoteResponse userVote = createUserVote(request.toCreateUserVoteRequest());
-                yield CommunityPostResponse.fromUserVote(findUserVote(userVote.getUserVoteId()));
+                yield toUserVotePostResponse(findUserVote(userVote.getUserVoteId()), request.getProfileId());
             }
         };
     }
@@ -193,18 +198,25 @@ public class CommunityService {
     @Transactional
     public ThreadDetailsResponse getThreadDetails(Long threadId) {
         Thread thread = findThread(threadId);
+        assertVisible(thread);
         thread.increaseViewCount();
 
         Program program = findProgram(thread.getProgramId());
         Mission mission = thread.getMissionId() == null ? null : findMission(thread.getMissionId());
-        return ThreadDetailsResponse.from(thread, program, mission, getComments(CommunityPostType.THREAD, threadId));
+        return ThreadDetailsResponse.from(thread, program, mission, findProfile(thread.getProfileId()), getComments(CommunityPostType.THREAD, threadId));
     }
 
     @Transactional
-    public CommunityPostResponse updateCommunityPost(CommunityPostType postType, Long postId, UpdateCommunityPostRequest request) {
+    public CommunityPostResponse updateCommunityPost(
+            CommunityPostType postType,
+            Long postId,
+            Long profileId,
+            UpdateCommunityPostRequest request
+    ) {
         if (request == null) {
             throw new IllegalArgumentException("Request body is required.");
         }
+        assertPostOwner(findCommunityPost(postType, postId), profileId);
 
         return switch (postType) {
             case THREAD -> {
@@ -213,13 +225,14 @@ public class CommunityService {
             }
             case USER_VOTE -> {
                 UserVoteResponse userVote = updateUserVote(postId, request.toUpdateUserVoteRequest());
-                yield toUserVotePostResponse(findUserVote(userVote.getUserVoteId()), null);
+                yield toUserVotePostResponse(findUserVote(userVote.getUserVoteId()), profileId);
             }
         };
     }
 
     @Transactional
-    public void deleteCommunityPost(CommunityPostType postType, Long postId) {
+    public void deleteCommunityPost(CommunityPostType postType, Long postId, Long profileId) {
+        assertPostOwner(findCommunityPost(postType, postId), profileId);
         switch (postType) {
             case THREAD -> deleteThread(postId);
             case USER_VOTE -> deleteUserVote(postId);
@@ -241,6 +254,7 @@ public class CommunityService {
 
     @Transactional
     public void deleteThread(Long threadId) {
+        deleteCommunityRelations(CommunityPostType.THREAD, threadId);
         threadRepository.delete(findThread(threadId));
     }
 
@@ -278,6 +292,7 @@ public class CommunityService {
 
     @Transactional
     public void deleteUserVote(Long userVoteId) {
+        deleteCommunityRelations(CommunityPostType.USER_VOTE, userVoteId);
         userVoteSelectionRepository.deleteByUserVoteId(userVoteId);
         userVoteOptionRepository.deleteByUserVoteId(userVoteId);
         userVoteRepository.delete(findUserVote(userVoteId));
@@ -286,6 +301,7 @@ public class CommunityService {
     @Transactional
     public UserVoteDetailsResponse getUserVoteDetails(Long userVoteId, Long profileId) {
         UserVote userVote = findUserVote(userVoteId);
+        assertVisible(userVote);
         userVote.increaseViewCount();
         return toUserVoteDetails(userVoteId, userVote, profileId);
     }
@@ -293,6 +309,7 @@ public class CommunityService {
     @Transactional(readOnly = true)
     public UserVoteDetailsResponse getUserVoteResult(Long userVoteId, Long profileId) {
         UserVote userVote = findUserVote(userVoteId);
+        assertVisible(userVote);
         return toUserVoteDetails(userVoteId, userVote, profileId);
     }
 
@@ -300,6 +317,7 @@ public class CommunityService {
     public UserVoteDetailsResponse voteUserVote(Long userVoteId, SelectUserVoteOptionRequest request) {
         validateUserVoteRequest(request);
         UserVote userVote = findUserVote(userVoteId);
+        assertVisible(userVote);
         findProfile(request.getProfileId());
         UserVoteOption option = userVoteOptionRepository.findById(request.getUserVoteOptionId())
                 .orElseThrow(() -> new IllegalArgumentException("User vote option not found. userVoteOptionId=" + request.getUserVoteOptionId()));
@@ -340,6 +358,7 @@ public class CommunityService {
                             .profileId(request.getProfileId())
                             .build());
                     post.increaseLikeCount();
+                    notifyPostLike(post, request.getProfileId());
                     return new CommunityLikeToggleResponse(true, post.getLikeCount());
                 });
     }
@@ -353,8 +372,9 @@ public class CommunityService {
         CommunityComment comment = communityCommentRepository.save(CommunityComment.toEntity(postType, postId, request));
         post.increaseCommentCount();
         profile.addActivityPoint(COMMENT_CREATE_ACTIVITY_POINT);
+        notifyPostComment(post, comment);
 
-        return CommunityCommentResponse.from(comment);
+        return CommunityCommentResponse.from(comment, profile);
     }
 
     @Transactional
@@ -375,8 +395,48 @@ public class CommunityService {
                             .profileId(request.getProfileId())
                             .build());
                     comment.increaseLikeCount();
+                    notifyCommentLike(comment, request.getProfileId());
                     return new CommunityLikeToggleResponse(true, comment.getLikeCount());
                 });
+    }
+
+    private void notifyPostLike(CommunityPost post, Long actorProfileId) {
+        if (!post.getProfileId().equals(actorProfileId)) {
+            pushNotificationService.notify(
+                    post.getProfileId(),
+                    PushNotificationType.LIKE,
+                    "게시글에 좋아요가 달렸어요",
+                    post.getTitle() + " 글을 좋아해요.",
+                    post.getClass().getSimpleName().toUpperCase(),
+                    post.getId()
+            );
+        }
+    }
+
+    private void notifyPostComment(CommunityPost post, CommunityComment comment) {
+        if (!post.getProfileId().equals(comment.getProfileId())) {
+            pushNotificationService.notify(
+                    post.getProfileId(),
+                    PushNotificationType.COMMENT,
+                    "게시글에 댓글이 달렸어요",
+                    post.getTitle() + " 글에 새로운 댓글이 달렸어요.",
+                    comment.getPostType().name(),
+                    comment.getPostId()
+            );
+        }
+    }
+
+    private void notifyCommentLike(CommunityComment comment, Long actorProfileId) {
+        if (!comment.getProfileId().equals(actorProfileId)) {
+            pushNotificationService.notify(
+                    comment.getProfileId(),
+                    PushNotificationType.LIKE,
+                    "댓글에 좋아요가 달렸어요",
+                    comment.getContent(),
+                    comment.getPostType().name(),
+                    comment.getPostId()
+            );
+        }
     }
 
     private UserVoteDetailsResponse toUserVoteDetails(Long userVoteId, UserVote userVote, Long profileId) {
@@ -384,13 +444,21 @@ public class CommunityService {
         UserVoteOption selectedOption = profileId == null ? null : userVoteSelectionRepository.findByUserVoteIdAndProfileId(userVoteId, profileId)
                 .map(UserVoteSelection::getUserVoteOption)
                 .orElse(null);
-        return UserVoteDetailsResponse.from(userVote, options, selectedOption, getComments(CommunityPostType.USER_VOTE, userVoteId));
+        return UserVoteDetailsResponse.from(userVote, findProfile(userVote.getProfileId()), options, selectedOption, getComments(CommunityPostType.USER_VOTE, userVoteId));
     }
 
     private List<CommunityCommentResponse> getComments(CommunityPostType postType, Long postId) {
         return communityCommentRepository.findByPostTypeAndPostIdOrderByCreatedAtAsc(postType, postId).stream()
-                .map(CommunityCommentResponse::from)
+                .filter(CommunityComment::isVisible)
+                .map(comment -> CommunityCommentResponse.from(comment, findProfile(comment.getProfileId())))
                 .toList();
+    }
+
+    private void deleteCommunityRelations(CommunityPostType postType, Long postId) {
+        communityCommentRepository.findByPostTypeAndPostId(postType, postId)
+                .forEach(comment -> communityCommentLikeRepository.deleteByCommunityCommentId(comment.getId()));
+        communityCommentRepository.deleteByPostTypeAndPostId(postType, postId);
+        communityPostLikeRepository.deleteByPostTypeAndPostId(postType, postId);
     }
 
     private void saveUserVoteOptions(UserVote userVote, List<CreateUserVoteRequest.UserVoteOptionRequest> options) {
@@ -417,10 +485,24 @@ public class CommunityService {
     }
 
     private CommunityPost findCommunityPost(CommunityPostType postType, Long postId) {
-        return switch (postType) {
+        CommunityPost post = switch (postType) {
             case THREAD -> findThread(postId);
             case USER_VOTE -> findUserVote(postId);
         };
+        assertVisible(post);
+        return post;
+    }
+
+    private void assertPostOwner(CommunityPost post, Long profileId) {
+        if (!post.getProfileId().equals(profileId)) {
+            throw new IllegalArgumentException("Only the author can modify or delete this community post.");
+        }
+    }
+
+    private void assertVisible(CommunityPost post) {
+        if (!post.isVisible()) {
+            throw new IllegalArgumentException("Hidden community post cannot be accessed.");
+        }
     }
 
     private Thread findThread(Long threadId) {
@@ -438,6 +520,9 @@ public class CommunityService {
                 .orElseThrow(() -> new IllegalArgumentException("Community comment not found. communityCommentId=" + communityCommentId));
         if (comment.getPostType() != postType) {
             throw new IllegalArgumentException("Community comment does not belong to " + postType + ".");
+        }
+        if (!comment.isVisible()) {
+            throw new IllegalArgumentException("Hidden community comment cannot be accessed.");
         }
         return comment;
     }
@@ -463,11 +548,13 @@ public class CommunityService {
         if (request.getProgramId() == null && request.getMissionId() == null) throw new IllegalArgumentException("programId or missionId is required.");
         if (request.getTitle() == null || request.getTitle().isBlank()) throw new IllegalArgumentException("title is required.");
         if (request.getDescription() == null || request.getDescription().isBlank()) throw new IllegalArgumentException("description is required.");
+        validateThreadImageUrls(request.getImageUrls());
     }
 
     private void validateUpdateThreadRequest(UpdateThreadRequest request) {
         if (request.getTitle() != null && request.getTitle().isBlank()) throw new IllegalArgumentException("title cannot be blank.");
         if (request.getDescription() != null && request.getDescription().isBlank()) throw new IllegalArgumentException("description cannot be blank.");
+        validateThreadImageUrls(request.getImageUrls());
     }
 
     private void validateUpdateUserVoteRequest(UpdateUserVoteRequest request) {
@@ -505,5 +592,14 @@ public class CommunityService {
     private void validateProfileOnlyRequest(ToggleCommunityLikeRequest request) {
         if (request == null) throw new IllegalArgumentException("Request body is required.");
         if (request.getProfileId() == null) throw new IllegalArgumentException("profileId is required.");
+    }
+
+    private void validateThreadImageUrls(List<String> imageUrls) {
+        if (imageUrls != null && imageUrls.size() > 5) {
+            throw new IllegalArgumentException("imageUrls can contain up to 5 images.");
+        }
+        if (imageUrls != null && imageUrls.stream().anyMatch(imageUrl -> imageUrl == null || imageUrl.isBlank())) {
+            throw new IllegalArgumentException("imageUrl cannot be blank.");
+        }
     }
 }

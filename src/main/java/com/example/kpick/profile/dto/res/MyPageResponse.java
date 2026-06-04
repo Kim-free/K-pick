@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class MyPageResponse {
     private Long profileId;
     private String nickname;
+    private String profileImageUrl;
     private PointTierResponse pointTier;
     private int seasonRank;
     private long seasonPoint;
@@ -33,6 +34,7 @@ public class MyPageResponse {
         return new MyPageResponse(
                 profile.getId(),
                 profile.getNickname(),
+                profile.getProfileImageUrl(),
                 pointTier,
                 seasonRank,
                 profile.getMissionPointValue(),

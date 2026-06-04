@@ -7,9 +7,9 @@ import com.example.kpick.benefit.service.BenefitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -18,18 +18,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class BenefitController {
     private final BenefitService benefitService;
 
-    @GetMapping("/{profileId}")
-    public ResponseEntity<BenefitHomeResponse> getBenefitHome(@PathVariable Long profileId) {
+    @GetMapping("/me")
+    public ResponseEntity<BenefitHomeResponse> getBenefitHome(@RequestAttribute("authenticatedProfileId") Long profileId) {
         return ResponseEntity.ok(benefitService.getBenefitHome(profileId));
     }
 
-    @PostMapping("/{profileId}/attendance")
-    public ResponseEntity<AttendanceCheckResponse> checkAttendance(@PathVariable Long profileId) {
+    @PostMapping("/me/attendance")
+    public ResponseEntity<AttendanceCheckResponse> checkAttendance(@RequestAttribute("authenticatedProfileId") Long profileId) {
         return ResponseEntity.ok(benefitService.checkAttendance(profileId));
     }
 
-    @PostMapping("/{profileId}/ad-reward")
-    public ResponseEntity<AdRewardResponse> rewardAd(@PathVariable Long profileId) {
+    @PostMapping("/me/ad-reward")
+    public ResponseEntity<AdRewardResponse> rewardAd(@RequestAttribute("authenticatedProfileId") Long profileId) {
         return ResponseEntity.ok(benefitService.rewardAd(profileId));
     }
 }

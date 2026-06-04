@@ -10,4 +10,7 @@ public interface CommunityCommentRepository extends JpaRepository<CommunityComme
     List<CommunityComment> findByPostTypeAndPostIdOrderByCreatedAtAsc(CommunityPostType postType, Long postId);
     List<CommunityComment> findByProfileIdOrderByCreatedAtDesc(Long profileId);
     long countByProfileId(Long profileId);
+    List<CommunityComment> findAllByOrderByCreatedAtDesc();
+    List<CommunityComment> findByPostTypeAndPostId(CommunityPostType postType, Long postId);
+    void deleteByPostTypeAndPostId(CommunityPostType postType, Long postId);
 }

@@ -26,6 +26,7 @@ public class Profile {
     private List<ProgramInterest> programInterests;
 
     private String nickname;
+    private String profileImageUrl;
     private boolean gender;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
@@ -101,6 +102,13 @@ public class Profile {
             throw new IllegalArgumentException("nickname must be 2 to 12 characters.");
         }
         this.nickname = trimmedNickname;
+    }
+
+    public void updateProfileImage(String profileImageUrl) {
+        if (profileImageUrl == null || profileImageUrl.isBlank()) {
+            throw new IllegalArgumentException("profileImageUrl is required.");
+        }
+        this.profileImageUrl = profileImageUrl.trim();
     }
 
     @PrePersist

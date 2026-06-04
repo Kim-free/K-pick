@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -36,21 +37,24 @@ public class CommunityController {
             @RequestParam(required = false) CommunityPostType postType,
             @RequestParam(required = false) Genre genre,
             @RequestParam(required = false) Long programId,
-            @RequestParam(required = false) Long profileId
+            @RequestAttribute("authenticatedProfileId") Long profileId
     ) {
         return ResponseEntity.ok(communityService.getCommunityPosts(postType, genre, programId, profileId));
     }
 
     @PostMapping("/api/community")
-    public ResponseEntity<CommunityPostResponse> createCommunityPost(@RequestBody CreateCommunityPostRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(communityService.createCommunityPost(request));
+    public ResponseEntity<CommunityPostResponse> createCommunityPost(
+            @RequestAttribute("authenticatedProfileId") Long profileId,
+            @RequestBody CreateCommunityPostRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(communityService.createCommunityPost(request.withProfileId(profileId)));
     }
 
     @GetMapping("/api/community/posts/{postId}")
     public ResponseEntity<Object> getCommunityPostDetails(
             @PathVariable Long postId,
             @RequestParam CommunityPostType postType,
-            @RequestParam(required = false) Long profileId
+            @RequestAttribute("authenticatedProfileId") Long profileId
     ) {
         return ResponseEntity.ok(communityService.getCommunityPostDetails(postType, postId, profileId));
     }
@@ -59,17 +63,19 @@ public class CommunityController {
     public ResponseEntity<CommunityPostResponse> updateCommunityPost(
             @PathVariable CommunityPostType postType,
             @PathVariable Long postId,
+            @RequestAttribute("authenticatedProfileId") Long profileId,
             @RequestBody UpdateCommunityPostRequest request
     ) {
-        return ResponseEntity.ok(communityService.updateCommunityPost(postType, postId, request));
+        return ResponseEntity.ok(communityService.updateCommunityPost(postType, postId, profileId, request));
     }
 
     @DeleteMapping("/api/community/{postType}/{postId}")
     public ResponseEntity<Void> deleteCommunityPost(
             @PathVariable CommunityPostType postType,
-            @PathVariable Long postId
+            @PathVariable Long postId,
+            @RequestAttribute("authenticatedProfileId") Long profileId
     ) {
-        communityService.deleteCommunityPost(postType, postId);
+        communityService.deleteCommunityPost(postType, postId, profileId);
         return ResponseEntity.noContent().build();
     }
 
@@ -77,38 +83,45 @@ public class CommunityController {
     public ResponseEntity<CommunityLikeToggleResponse> toggleCommunityPostLike(
             @PathVariable CommunityPostType postType,
             @PathVariable Long postId,
+            @RequestAttribute("authenticatedProfileId") Long profileId,
             @RequestBody ToggleCommunityLikeRequest request
     ) {
-        return ResponseEntity.ok(communityService.togglePostLike(postType, postId, request));
+        return ResponseEntity.ok(communityService.togglePostLike(postType, postId, request.withProfileId(profileId)));
     }
 
     @PostMapping("/api/community/{postType}/{postId}/comments")
     public ResponseEntity<CommunityCommentResponse> createCommunityComment(
             @PathVariable CommunityPostType postType,
             @PathVariable Long postId,
+            @RequestAttribute("authenticatedProfileId") Long profileId,
             @RequestBody CreateCommunityCommentRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(communityService.createComment(postType, postId, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(communityService.createComment(postType, postId, request.withProfileId(profileId)));
     }
 
     @PostMapping("/api/community/{postType}/comments/{communityCommentId}/likes")
     public ResponseEntity<CommunityLikeToggleResponse> toggleCommunityCommentLike(
             @PathVariable CommunityPostType postType,
             @PathVariable Long communityCommentId,
+            @RequestAttribute("authenticatedProfileId") Long profileId,
             @RequestBody ToggleCommunityLikeRequest request
     ) {
-        return ResponseEntity.ok(communityService.toggleCommentLike(postType, communityCommentId, request));
+        return ResponseEntity.ok(communityService.toggleCommentLike(postType, communityCommentId, request.withProfileId(profileId)));
     }
 
     @PostMapping("/api/user-votes/{userVoteId}/vote")
-    public ResponseEntity<UserVoteDetailsResponse> voteUserVote(@PathVariable Long userVoteId, @RequestBody SelectUserVoteOptionRequest request) {
-        return ResponseEntity.ok(communityService.voteUserVote(userVoteId, request));
+    public ResponseEntity<UserVoteDetailsResponse> voteUserVote(
+            @PathVariable Long userVoteId,
+            @RequestAttribute("authenticatedProfileId") Long profileId,
+            @RequestBody SelectUserVoteOptionRequest request
+    ) {
+        return ResponseEntity.ok(communityService.voteUserVote(userVoteId, request.withProfileId(profileId)));
     }
 
     @GetMapping("/api/user-votes/{userVoteId}/result")
     public ResponseEntity<UserVoteDetailsResponse> getUserVoteResult(
             @PathVariable Long userVoteId,
-            @RequestParam(required = false) Long profileId
+            @RequestAttribute("authenticatedProfileId") Long profileId
     ) {
         return ResponseEntity.ok(communityService.getUserVoteResult(userVoteId, profileId));
     }

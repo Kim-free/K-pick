@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -21,6 +22,7 @@ public class ThreadResponse {
     private String description;
     private Boolean isNicknamePublic;
     private Boolean isSharedFromMission;
+    private List<String> imageUrls;
     private int viewCount;
     private int likeCount;
     private int commentCount;
@@ -37,6 +39,7 @@ public class ThreadResponse {
                 thread.getDescription(),
                 thread.isNicknamePublic(),
                 thread.getMissionId() != null,
+                thread.getImageUrls(),
                 thread.getViewCount(),
                 thread.getLikeCount(),
                 thread.getCommentCount(),

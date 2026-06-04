@@ -3,6 +3,7 @@ package com.example.kpick.mission.dto.res;
 import com.example.kpick.mission.domain.Mission;
 import com.example.kpick.mission.domain.MissionOption;
 import com.example.kpick.mission.domain.MissionState;
+import com.example.kpick.mission.domain.AdminMissionStatus;
 import com.example.kpick.mission.domain.ResultPublishTiming;
 import com.example.kpick.program.domain.Program;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,7 @@ public class MissionAdminResponse {
     private String programName;
     private String episode;
     private String missionName;
+    private AdminMissionStatus adminStatus;
     private MissionState missionState;
     private int attenderCount;
     private LocalDateTime dueDateTime;
@@ -42,16 +44,30 @@ public class MissionAdminResponse {
                 program == null ? null : program.getProgramName(),
                 mission.getEpisode(),
                 mission.getMissionName(),
+                resolveAdminStatus(mission),
                 mission.getMissionState(),
                 mission.getAttenderCount(),
                 mission.getDueDateTime(),
                 mission.getCoinFee(),
                 mission.getResultPublishTiming(),
-                mission.getMissionState() != MissionState.COMPLETED,
+                !Boolean.FALSE.equals(mission.getIsActive()) && mission.getMissionState() != MissionState.COMPLETED,
                 options.stream()
                         .map(option -> OptionResponse.from(option, mission.getAttenderCount(), optionSelectionCounts.getOrDefault(option.getId(), 0L)))
                         .toList()
         );
+    }
+
+    public static AdminMissionStatus resolveAdminStatus(Mission mission) {
+        if (Boolean.FALSE.equals(mission.getIsActive())) {
+            return AdminMissionStatus.INACTIVE;
+        }
+        if (mission.getMissionState() == MissionState.COMPLETED) {
+            return AdminMissionStatus.RESULT_PUBLISHED;
+        }
+        if (mission.getDueDateTime() != null && !mission.getDueDateTime().isAfter(LocalDateTime.now())) {
+            return AdminMissionStatus.CLOSED;
+        }
+        return AdminMissionStatus.ONGOING;
     }
 
     @Getter

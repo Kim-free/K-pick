@@ -6,6 +6,7 @@ import com.example.kpick.community.uservote.domain.UserVote;
 import com.example.kpick.community.uservote.domain.UserVoteOption;
 import com.example.kpick.mission.domain.Mission;
 import com.example.kpick.program.domain.Program;
+import com.example.kpick.profile.domain.Profile;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,8 @@ public class CommunityPostResponse {
     private CommunityPostType postType;
     private Long postId;
     private Long profileId;
+    private String nickname;
+    private String profileImageUrl;
     private Long programId;
     private Long missionId;
     private String title;
@@ -33,17 +36,20 @@ public class CommunityPostResponse {
     private Long selectedUserVoteOptionId;
     private List<UserVoteOptionSummaryResponse> userVoteOptions;
     private SharedMissionSummaryResponse sharedMission;
+    private List<String> imageUrls;
     private LocalDateTime createdAt;
 
     public static CommunityPostResponse fromThread(Thread thread) {
-        return fromThread(thread, null, null);
+        return fromThread(thread, null, null, null);
     }
 
-    public static CommunityPostResponse fromThread(Thread thread, Mission mission, Program missionProgram) {
+    public static CommunityPostResponse fromThread(Thread thread, Mission mission, Program missionProgram, Profile profile) {
         return new CommunityPostResponse(
                 CommunityPostType.THREAD,
                 thread.getId(),
                 thread.getProfileId(),
+                profile == null ? null : profile.getNickname(),
+                profile == null ? null : profile.getProfileImageUrl(),
                 thread.getProgramId(),
                 thread.getMissionId(),
                 thread.getTitle(),
@@ -57,23 +63,27 @@ public class CommunityPostResponse {
                 null,
                 List.of(),
                 mission == null ? null : SharedMissionSummaryResponse.from(mission, missionProgram),
+                thread.getImageUrls(),
                 thread.getCreatedAt()
         );
     }
 
     public static CommunityPostResponse fromUserVote(UserVote userVote) {
-        return fromUserVote(userVote, List.of(), null);
+        return fromUserVote(userVote, List.of(), null, null);
     }
 
     public static CommunityPostResponse fromUserVote(
             UserVote userVote,
             List<UserVoteOption> options,
-            Long selectedUserVoteOptionId
+            Long selectedUserVoteOptionId,
+            Profile profile
     ) {
         return new CommunityPostResponse(
                 CommunityPostType.USER_VOTE,
                 userVote.getId(),
                 userVote.getProfileId(),
+                profile == null ? null : profile.getNickname(),
+                profile == null ? null : profile.getProfileImageUrl(),
                 userVote.getProgramId(),
                 null,
                 userVote.getTitle(),
@@ -89,6 +99,7 @@ public class CommunityPostResponse {
                         .map(option -> UserVoteOptionSummaryResponse.from(option, selectedUserVoteOptionId))
                         .toList(),
                 null,
+                List.of(),
                 userVote.getCreatedAt()
         );
     }

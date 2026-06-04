@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface ProgramInterestRepository extends JpaRepository<ProgramInterest, Long> {
     List<ProgramInterest> findByProfileId(Long profileId);
+    List<ProgramInterest> findByProgramId(Long programId);
     void deleteByProfileId(Long profileId);
 }

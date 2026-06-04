@@ -3,6 +3,7 @@ package com.example.kpick.program.controller;
 import com.example.kpick.program.dto.req.CreateProgramRequest;
 import com.example.kpick.program.dto.req.UpdateProgramRequest;
 import com.example.kpick.program.dto.res.ProgramDetailsResponse;
+import com.example.kpick.program.dto.res.AdminProgramListResponse;
 import com.example.kpick.program.dto.res.ProgramResponse;
 import com.example.kpick.program.domain.Genre;
 import com.example.kpick.program.service.ProgramService;
@@ -35,13 +36,13 @@ public class ProgramAdminController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProgramResponse>> getPrograms(
+    public ResponseEntity<List<AdminProgramListResponse>> getPrograms(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Genre genre,
             @RequestParam(required = false) Boolean isOnAir,
             @RequestParam(required = false) Boolean isExposed
     ) {
-        return ResponseEntity.ok(programService.getPrograms(keyword, genre, isOnAir, isExposed));
+        return ResponseEntity.ok(programService.getAdminPrograms(keyword, genre, isOnAir, isExposed));
     }
 
     @GetMapping("/{programId}/details")

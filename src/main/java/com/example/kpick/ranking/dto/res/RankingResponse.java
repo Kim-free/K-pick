@@ -29,6 +29,7 @@ public class RankingResponse {
         private int rank;
         private Long profileId;
         private String nickname;
+        private String profileImageUrl;
         private long score;
         private PointTierResponse pointTier;
         private String nextStepMessage;

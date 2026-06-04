@@ -2,6 +2,9 @@ package com.example.kpick.mission.service;
 
 import com.example.kpick.community.thread.domain.Thread;
 import com.example.kpick.community.thread.repository.ThreadRepository;
+import com.example.kpick.benefit.domain.PickHistory;
+import com.example.kpick.benefit.domain.PickHistoryType;
+import com.example.kpick.benefit.repository.PickHistoryRepository;
 import com.example.kpick.mission.domain.Mission;
 import com.example.kpick.mission.domain.MissionAttender;
 import com.example.kpick.mission.domain.MissionOption;
@@ -48,6 +51,7 @@ public class MissionQueryService {
     private final ProgramRepository programRepository;
     private final ProgramInterestRepository programInterestRepository;
     private final ProfileRepository profileRepository;
+    private final PickHistoryRepository pickHistoryRepository;
 
     @Transactional(readOnly = true)
     public List<MissionListResponse> getMissionsByStatus(MissionState missionState) {
@@ -164,6 +168,7 @@ public class MissionQueryService {
 
     private MissionAttender createMissionAttender(Long missionId, Long profileId, Long missionOptionId) {
         Mission mission = findMission(missionId);
+        validateAttendableMission(mission);
         Profile profile = findProfile(profileId);
         MissionOption missionOption = missionOptionRepository.findById(missionOptionId)
                 .orElseThrow(() -> new IllegalArgumentException("Mission option not found. missionOptionId=" + missionOptionId));
@@ -176,14 +181,34 @@ public class MissionQueryService {
         }
 
         profile.deductCoin(mission.getCoinFee());
+        pickHistoryRepository.save(PickHistory.create(
+                profileId,
+                profile.getNickname(),
+                PickHistoryType.MISSION_PARTICIPATION,
+                -mission.getCoinFee(),
+                "미션 참여"
+        ));
         mission.increaseAttenderCount();
 
         MissionAttender missionAttender = MissionAttender.builder()
                 .mission(mission)
                 .profile(profile)
                 .missionOption(missionOption)
+                .createdAt(java.time.LocalDateTime.now())
                 .build();
         return missionAttenderRepository.save(missionAttender);
+    }
+
+    private void validateAttendableMission(Mission mission) {
+        if (Boolean.FALSE.equals(mission.getIsActive())) {
+            throw new IllegalArgumentException("Inactive mission cannot be attended.");
+        }
+        if (mission.getMissionState() == MissionState.COMPLETED) {
+            throw new IllegalArgumentException("Completed mission cannot be attended.");
+        }
+        if (mission.getDueDateTime() != null && !mission.getDueDateTime().isAfter(java.time.LocalDateTime.now())) {
+            throw new IllegalArgumentException("Closed mission cannot be attended.");
+        }
     }
 
     private Mission findMission(Long missionId) {

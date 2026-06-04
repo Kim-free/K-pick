@@ -4,6 +4,7 @@ import com.example.kpick.community.domain.CommunityPostType;
 import com.example.kpick.community.dto.res.CommunityCommentResponse;
 import com.example.kpick.community.uservote.domain.UserVote;
 import com.example.kpick.community.uservote.domain.UserVoteOption;
+import com.example.kpick.profile.domain.Profile;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,6 +16,8 @@ public class UserVoteDetailsResponse {
     private CommunityPostType postType;
     private Long userVoteId;
     private Long profileId;
+    private String nickname;
+    private String profileImageUrl;
     private Long programId;
     private String title;
     private String description;
@@ -30,6 +33,7 @@ public class UserVoteDetailsResponse {
 
     public static UserVoteDetailsResponse from(
             UserVote userVote,
+            Profile profile,
             List<UserVoteOption> options,
             UserVoteOption selectedOption,
             List<CommunityCommentResponse> comments
@@ -38,6 +42,8 @@ public class UserVoteDetailsResponse {
                 CommunityPostType.USER_VOTE,
                 userVote.getId(),
                 userVote.getProfileId(),
+                profile.getNickname(),
+                profile.getProfileImageUrl(),
                 userVote.getProgramId(),
                 userVote.getTitle(),
                 userVote.getDescription(),

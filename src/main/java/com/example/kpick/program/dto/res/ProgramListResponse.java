@@ -13,12 +13,14 @@ public class ProgramListResponse {
     private Long programId;
     private String programName;
     private Genre genre;
+    private String thumbnailImageUrl;
 
     public static ProgramListResponse from(Program program) {
         return new ProgramListResponse(
                 program.getId(),
                 program.getProgramName(),
-                program.getGenre()
+                program.getGenre(),
+                program.getThumbnailImageUrl()
         );
     }
 }

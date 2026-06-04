@@ -2,8 +2,9 @@ package com.example.kpick.auth.service;
 
 import com.example.kpick.appUser.domain.AppUser;
 import com.example.kpick.appUser.domain.LoginType;
+import org.springframework.beans.factory.annotation.Value;
 import com.example.kpick.appUser.repository.AppUserRepository;
-import com.example.kpick.auth.dto.req.AppleLoginRequest;
+import com.example.kpick.auth.dto.req.OAuthLoginRequest;
 import com.example.kpick.auth.dto.res.AuthResponse;
 import com.example.kpick.profile.domain.Profile;
 import com.example.kpick.profile.domain.SignUpStatus;
@@ -18,26 +19,54 @@ public class AuthService {
     private final AppUserRepository appUserRepository;
     private final ProfileRepository profileRepository;
     private final AppleIdentityTokenParser appleIdentityTokenParser;
+    private final OAuthTokenClient oAuthTokenClient;
+    private final OAuthUserInfoClient oAuthUserInfoClient;
     private final JwtProvider jwtProvider;
 
+    @Value("${admin.emails:}")
+    private String adminEmails;
+
     @Transactional
-    public AuthResponse loginWithApple(AppleLoginRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("Request body is required.");
-        }
-        AppleTokenClaims claims = appleIdentityTokenParser.parseAndValidate(request.getIdentityToken());
-        AppUser appUser = appUserRepository.findByLoginTypeAndProviderId(LoginType.APPLE, claims.getSubject())
+    public AuthResponse loginWithApple(OAuthLoginRequest request) {
+        validateOAuthLoginRequest(request);
+        OAuthTokenResponse tokenResponse = oAuthTokenClient.exchangeAppleCode(request.getAuthorizationCode());
+        AppleTokenClaims claims = appleIdentityTokenParser.parseAndValidate(tokenResponse.getIdentityToken());
+        return loginOAuth(LoginType.APPLE, new OAuthProviderProfile(
+                claims.getSubject(),
+                claims.getEmail(),
+                claims.getEmailVerified()
+        ));
+    }
+
+    @Transactional
+    public AuthResponse loginWithGoogle(OAuthLoginRequest request) {
+        validateOAuthLoginRequest(request);
+        OAuthTokenResponse tokenResponse = oAuthTokenClient.exchangeGoogleCode(request.getAuthorizationCode());
+        return loginOAuth(LoginType.GOOGLE, oAuthUserInfoClient.getGoogleProfile(tokenResponse.getAccessToken()));
+    }
+
+    @Transactional
+    public AuthResponse loginWithKakao(OAuthLoginRequest request) {
+        validateOAuthLoginRequest(request);
+        OAuthTokenResponse tokenResponse = oAuthTokenClient.exchangeKakaoCode(request.getAuthorizationCode());
+        return loginOAuth(LoginType.KAKAO, oAuthUserInfoClient.getKakaoProfile(tokenResponse.getAccessToken()));
+    }
+
+    private AuthResponse loginOAuth(LoginType loginType, OAuthProviderProfile providerProfile) {
+        AppUser appUser = appUserRepository.findByLoginTypeAndProviderId(loginType, providerProfile.getProviderId())
                 .orElse(null);
         boolean newUser = appUser == null;
 
         if (newUser) {
             appUser = appUserRepository.save(AppUser.createOAuthUser(
-                    claims.getEmail(),
-                    LoginType.APPLE,
-                    claims.getSubject(),
-                    claims.getEmailVerified()
+                    providerProfile.getEmail(),
+                    loginType,
+                    providerProfile.getProviderId(),
+                    providerProfile.getEmailVerified()
             ));
         }
+        appUser.markLoggedIn();
+        grantAdminRoleIfConfigured(appUser, providerProfile.getEmail());
 
         Long appUserId = appUser.getId();
         Profile profile = profileRepository.findByAppUserId(appUserId)
@@ -57,7 +86,30 @@ public class AuthService {
                 accessToken,
                 "Bearer",
                 newUser,
-                profile.getSignUpStatus()
+                profile.getSignUpStatus(),
+                appUser.getRoleOrDefault()
         );
+    }
+
+    private void grantAdminRoleIfConfigured(AppUser appUser, String email) {
+        if (email == null || email.isBlank() || adminEmails == null || adminEmails.isBlank()) {
+            return;
+        }
+        boolean isAdminEmail = java.util.Arrays.stream(adminEmails.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .anyMatch(value -> value.equalsIgnoreCase(email.trim()));
+        if (isAdminEmail) {
+            appUser.grantAdminRole();
+        }
+    }
+
+    private void validateOAuthLoginRequest(OAuthLoginRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Request body is required.");
+        }
+        if (request.getAuthorizationCode() == null || request.getAuthorizationCode().isBlank()) {
+            throw new IllegalArgumentException("authorizationCode is required.");
+        }
     }
 }

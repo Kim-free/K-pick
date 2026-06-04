@@ -4,6 +4,7 @@ import com.example.kpick.mission.domain.Mission;
 import com.example.kpick.mission.domain.MissionAttender;
 import com.example.kpick.mission.domain.MissionOption;
 import com.example.kpick.mission.domain.MissionState;
+import com.example.kpick.mission.domain.AdminMissionStatus;
 import com.example.kpick.mission.dto.req.ConfirmMissionResultRequest;
 import com.example.kpick.mission.dto.req.CreateMissionRequest;
 import com.example.kpick.mission.dto.req.CreateMissionRequest.MissionOptionRequest;
@@ -13,7 +14,11 @@ import com.example.kpick.mission.repository.MissionAttenderRepository;
 import com.example.kpick.mission.repository.MissionOptionRepository;
 import com.example.kpick.mission.repository.MissionRepository;
 import com.example.kpick.profile.domain.Profile;
+import com.example.kpick.notification.domain.PushNotificationType;
+import com.example.kpick.notification.service.PushNotificationService;
+import com.example.kpick.ranking.domain.PointTier;
 import com.example.kpick.program.domain.Program;
+import com.example.kpick.program.repository.ProgramInterestRepository;
 import com.example.kpick.program.repository.ProgramRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,15 +38,17 @@ public class MissionService {
     private final MissionOptionRepository missionOptionRepository;
     private final MissionAttenderRepository missionAttenderRepository;
     private final ProgramRepository programRepository;
+    private final ProgramInterestRepository programInterestRepository;
+    private final PushNotificationService pushNotificationService;
 
     @Transactional(readOnly = true)
-    public List<MissionAdminResponse> getAdminMissions(String keyword, Long programId, MissionState missionState) {
+    public List<MissionAdminResponse> getAdminMissions(String keyword, Long programId, AdminMissionStatus adminStatus) {
         Map<Long, Program> programMap = programRepository.findAll().stream()
                 .collect(Collectors.toMap(Program::getId, Function.identity()));
 
         return missionRepository.findAllByOrderByIdDesc().stream()
                 .filter(mission -> programId == null || mission.getProgramId().equals(programId))
-                .filter(mission -> missionState == null || mission.getMissionState() == missionState)
+                .filter(mission -> adminStatus == null || MissionAdminResponse.resolveAdminStatus(mission) == adminStatus)
                 .filter(mission -> matchesKeyword(mission, programMap.get(mission.getProgramId()), keyword))
                 .map(mission -> MissionAdminResponse.from(
                         mission,
@@ -60,6 +67,7 @@ public class MissionService {
 
         Mission savedMission = missionRepository.save(mission);
         List<MissionOption> options = saveOptions(savedMission, request.getOptions());
+        notifyInterestedProfiles(savedMission);
 
         return MissionResponse.from(savedMission, options);
     }
@@ -86,6 +94,7 @@ public class MissionService {
         options.forEach(option -> option.markCorrect(option.getId().equals(request.getCorrectMissionOptionId())));
         mission.complete(request.getResultPublishTiming());
         rewardCorrectAttenders(mission, request.getCorrectMissionOptionId());
+        notifyMissionResult(mission);
 
         return MissionResponse.from(mission, options);
     }
@@ -100,8 +109,71 @@ public class MissionService {
         long rewardPoint = (long) Math.floor(totalRewardPool / (double) correctAttenders.size());
         correctAttenders.forEach(attender -> {
             Profile profile = attender.getProfile();
+            long previousPoint = profile.getMissionPointValue();
             profile.addMissionPoint(rewardPoint);
+            notifyRankingGrowth(profile, previousPoint);
+            pushNotificationService.notify(
+                    profile.getId(),
+                    PushNotificationType.POINT_REWARD,
+                    "포인트가 지급되었어요",
+                    mission.getMissionName() + " 정답 보상으로 " + rewardPoint + "pt를 받았어요.",
+                    "MISSION",
+                    mission.getId()
+            );
         });
+    }
+
+    private void notifyRankingGrowth(Profile profile, long previousPoint) {
+        long currentPoint = profile.getMissionPointValue();
+        PointTier previousTier = PointTier.from(previousPoint);
+        PointTier currentTier = PointTier.from(currentPoint);
+        if (previousTier != currentTier) {
+            pushNotificationService.notify(
+                    profile.getId(),
+                    PushNotificationType.RANKING_TIER_CHANGE,
+                    "랭킹 단계가 올랐어요",
+                    currentTier.getDisplayName(currentPoint) + " 단계에 도달했어요.",
+                    "RANKING",
+                    null
+            );
+            return;
+        }
+        if (!currentTier.getDisplayName(previousPoint).equals(currentTier.getDisplayName(currentPoint))) {
+            pushNotificationService.notify(
+                    profile.getId(),
+                    PushNotificationType.GROWTH_BADGE_LEVEL_UP,
+                    "성장 뱃지 레벨이 올랐어요",
+                    currentTier.getDisplayName(currentPoint) + " 단계에 도달했어요.",
+                    "RANKING",
+                    null
+            );
+        }
+    }
+
+    private void notifyInterestedProfiles(Mission mission) {
+        programInterestRepository.findByProgramId(mission.getProgramId()).forEach(interest ->
+                pushNotificationService.notify(
+                        interest.getProfile().getId(),
+                        PushNotificationType.INTERESTED_PROGRAM,
+                        "관심 프로그램의 새 미션",
+                        mission.getMissionName() + " 미션이 등록되었어요.",
+                        "MISSION",
+                        mission.getId()
+                )
+        );
+    }
+
+    private void notifyMissionResult(Mission mission) {
+        missionAttenderRepository.findByMissionId(mission.getId()).forEach(attender ->
+                pushNotificationService.notify(
+                        attender.getProfile().getId(),
+                        PushNotificationType.MISSION_RESULT,
+                        "미션 결과가 확정되었어요",
+                        mission.getMissionName() + " 결과를 확인해보세요.",
+                        "MISSION",
+                        mission.getId()
+                )
+        );
     }
 
     private List<MissionOption> saveOptions(Mission mission, List<MissionOptionRequest> optionRequests) {
@@ -141,6 +213,9 @@ public class MissionService {
         }
         if (request.getProgramId() == null) {
             throw new IllegalArgumentException("programId is required.");
+        }
+        if (!programRepository.existsById(request.getProgramId())) {
+            throw new IllegalArgumentException("Program not found. programId=" + request.getProgramId());
         }
         if (request.getProfileId() == null) {
             throw new IllegalArgumentException("profileId is required.");

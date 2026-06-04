@@ -29,6 +29,7 @@ public class CommunityRankingResponse {
         private int rank;
         private Long profileId;
         private String nickname;
+        private String profileImageUrl;
         private long activityPoint;
         private long threadCount;
         private long commentCount;

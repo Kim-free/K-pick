@@ -28,15 +28,20 @@ spring:
       max-request-size: 10MB
 
 oauth2:
-  client-id: com.example.web
-  team-id: YOUR_TEAM_ID
-  key-id: YOUR_KEY_ID
-  private-key-path: classpath:keys/AuthKey_ABC123XYZ.p8
-  redirect-uri: https://api.example.com/auth/apple/callback
-  authorize-uri: https://appleid.apple.com/auth/authorize
-  scope:
-    - name
-    - email
+  apple:
+    client-id: com.freshmilk.pictory
+    team-id:
+    key-id:
+    private-key-path: classpath:keys/AuthKey_ABC123XYZ.p8
+    redirect-uri: http://localhost:3000/auth/apple/callback
+  google:
+    client-id:
+    client-secret:
+    redirect-uri: http://localhost:3000/auth/google/callback
+  kakao:
+    client-id:
+    client-secret:
+    redirect-uri: http://localhost:3000/auth/kakao/callback
 
   web:
     resources:
@@ -47,11 +52,11 @@ oauth2:
 
 
 jwt:
-  secret: deut28v1-local-jwt-secret-key-fully-obey-the-lord-9xP4mQ7vL2sN8kT5awe2z
+  secret:
   access-token-expiration: 86400000
 
-apple:
-  enabled : false
+admin:
+  emails: ${ADMIN_EMAILS:}
 
 springdoc:
   api-docs:
@@ -60,3 +65,11 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
+
+storage:
+  s3:
+    bucket: ${S3_BUCKET:}
+    region: ${S3_REGION:ap-northeast-2}
+    public-base-url: ${S3_PUBLIC_BASE_URL:}
+    endpoint: ${S3_ENDPOINT:}
+    presigned-url-expiration-seconds: ${S3_PRESIGNED_URL_EXPIRATION_SECONDS:300}

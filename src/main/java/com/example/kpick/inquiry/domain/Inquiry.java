@@ -44,7 +44,10 @@ public class Inquiry {
     @Enumerated(EnumType.STRING)
     private InquiryStatus inquiryStatus;
 
+    private String answerDraft;
+    private String answerContent;
     private LocalDateTime createdAt;
+    private LocalDateTime answeredAt;
 
     public static Inquiry toEntity(CreateInquiryRequest request) {
         return Inquiry.builder()
@@ -58,5 +61,17 @@ public class Inquiry {
                 .inquiryStatus(InquiryStatus.RECEIVED)
                 .createdAt(LocalDateTime.now())
                 .build();
+    }
+
+    public void saveDraft(String answerDraft) {
+        this.answerDraft = answerDraft;
+        this.inquiryStatus = InquiryStatus.DRAFTED;
+    }
+
+    public void answer(String answerContent) {
+        this.answerDraft = null;
+        this.answerContent = answerContent;
+        this.inquiryStatus = InquiryStatus.ANSWERED;
+        this.answeredAt = LocalDateTime.now();
     }
 }

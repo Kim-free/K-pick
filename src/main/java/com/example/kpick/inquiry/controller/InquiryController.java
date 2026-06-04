@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -17,7 +18,10 @@ public class InquiryController {
     private final InquiryService inquiryService;
 
     @PostMapping
-    public ResponseEntity<InquiryResponse> createInquiry(@RequestBody CreateInquiryRequest request) {
-        return ResponseEntity.ok(inquiryService.createInquiry(request));
+    public ResponseEntity<InquiryResponse> createInquiry(
+            @RequestAttribute("authenticatedProfileId") Long profileId,
+            @RequestBody CreateInquiryRequest request
+    ) {
+        return ResponseEntity.ok(inquiryService.createInquiry(request.withProfileId(profileId)));
     }
 }

@@ -20,6 +20,7 @@ public class ProgramResponse {
     private int episodeCount;
     private LocalDate broadcastStartDate;
     private LocalDate broadcastEndDate;
+    private LocalDate registeredDate;
     private String thumbnailImageUrl;
     private Boolean isOnAir;
     private Boolean isExposed;
@@ -36,6 +37,7 @@ public class ProgramResponse {
                 program.getEpisodeCount(),
                 program.getBroadcastStartDate(),
                 program.getBroadcastEndDate(),
+                program.getRegisteredDate(),
                 program.getThumbnailImageUrl(),
                 program.isOnAir(),
                 program.isExposed(),

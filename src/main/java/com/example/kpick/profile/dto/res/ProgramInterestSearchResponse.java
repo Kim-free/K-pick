@@ -38,6 +38,7 @@ public class ProgramInterestSearchResponse {
         private String season;
         private Boolean isOnAir;
         private Boolean isInterested;
+        private String thumbnailImageUrl;
 
         public static ProgramInterestSearchItemResponse from(Program program, boolean isInterested) {
             return new ProgramInterestSearchItemResponse(
@@ -47,7 +48,8 @@ public class ProgramInterestSearchResponse {
                     program.getGenre(),
                     program.getSeason(),
                     program.isOnAir(),
-                    isInterested
+                    isInterested,
+                    program.getThumbnailImageUrl()
             );
         }
     }

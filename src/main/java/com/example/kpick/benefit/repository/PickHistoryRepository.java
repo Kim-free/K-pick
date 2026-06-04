@@ -9,4 +9,5 @@ import java.util.List;
 public interface PickHistoryRepository extends JpaRepository<PickHistory, Long> {
     List<PickHistory> findAllByOrderByCreatedAtDesc();
     List<PickHistory> findByPickHistoryTypeOrderByCreatedAtDesc(PickHistoryType pickHistoryType);
+    List<PickHistory> findByProfileIdOrderByCreatedAtDesc(Long profileId);
 }

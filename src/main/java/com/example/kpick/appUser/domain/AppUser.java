@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @AllArgsConstructor @NoArgsConstructor @Builder
@@ -25,13 +27,41 @@ public class AppUser {
 
     private Boolean emailVerified;
 
+    @Enumerated(EnumType.STRING)
+    private AppUserRole appUserRole;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime lastLoginAt;
+
     public static AppUser createOAuthUser(String email, LoginType loginType, String providerId, Boolean emailVerified) {
+        LocalDateTime now = LocalDateTime.now();
         return AppUser.builder()
                 .email(email)
                 .password(null)
                 .loginType(loginType)
                 .providerId(providerId)
                 .emailVerified(emailVerified)
+                .appUserRole(AppUserRole.USER)
+                .createdAt(now)
+                .lastLoginAt(now)
                 .build();
+    }
+
+    public void markLoggedIn() {
+        this.lastLoginAt = LocalDateTime.now();
+        if (this.createdAt == null) {
+            this.createdAt = this.lastLoginAt;
+        }
+        if (this.appUserRole == null) {
+            this.appUserRole = AppUserRole.USER;
+        }
+    }
+
+    public void grantAdminRole() {
+        this.appUserRole = AppUserRole.ADMIN;
+    }
+
+    public AppUserRole getRoleOrDefault() {
+        return this.appUserRole == null ? AppUserRole.USER : this.appUserRole;
     }
 }

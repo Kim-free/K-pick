@@ -4,6 +4,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -23,6 +25,9 @@ public abstract class CommunityPost {
     protected int likeCount;
     protected int commentCount;
 
+    @Enumerated(EnumType.STRING)
+    protected CommunityContentStatus contentStatus;
+
     protected void initializeCommunityPost(Long profileId, Long programId, String title) {
         this.profileId = profileId;
         this.programId = programId;
@@ -31,6 +36,7 @@ public abstract class CommunityPost {
         this.viewCount = 0;
         this.likeCount = 0;
         this.commentCount = 0;
+        this.contentStatus = CommunityContentStatus.NORMAL;
     }
 
     public void increaseViewCount() {
@@ -49,5 +55,19 @@ public abstract class CommunityPost {
 
     public void increaseCommentCount() {
         this.commentCount++;
+    }
+
+    public void decreaseCommentCount() {
+        if (this.commentCount > 0) {
+            this.commentCount--;
+        }
+    }
+
+    public boolean isVisible() {
+        return this.contentStatus == null || this.contentStatus == CommunityContentStatus.NORMAL;
+    }
+
+    public void updateContentStatus(CommunityContentStatus contentStatus) {
+        this.contentStatus = contentStatus;
     }
 }

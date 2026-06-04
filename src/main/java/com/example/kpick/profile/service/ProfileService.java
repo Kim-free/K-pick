@@ -17,6 +17,7 @@ import com.example.kpick.profile.domain.Profile;
 import com.example.kpick.profile.domain.ProfileBadge;
 import com.example.kpick.profile.dto.req.CreateProfileBadgeRequest;
 import com.example.kpick.profile.dto.req.UpdateNicknameRequest;
+import com.example.kpick.profile.dto.req.UpdateProfileImageRequest;
 import com.example.kpick.profile.dto.req.UpdateProgramInterestsRequest;
 import com.example.kpick.profile.dto.res.CommunityActivityResponse;
 import com.example.kpick.profile.dto.res.MissionHistoryResponse;
@@ -24,10 +25,13 @@ import com.example.kpick.profile.dto.res.MyPageResponse;
 import com.example.kpick.profile.dto.res.NicknameCheckResponse;
 import com.example.kpick.profile.dto.res.ProfileBadgeResponse;
 import com.example.kpick.profile.dto.res.ProfileNicknameResponse;
+import com.example.kpick.profile.dto.res.ProfileImageResponse;
 import com.example.kpick.profile.dto.res.ProgramInterestResponse;
 import com.example.kpick.profile.dto.res.ProgramInterestSearchResponse;
 import com.example.kpick.profile.repository.ProfileBadgeRepository;
 import com.example.kpick.profile.repository.ProfileRepository;
+import com.example.kpick.notification.domain.PushNotificationType;
+import com.example.kpick.notification.service.PushNotificationService;
 import com.example.kpick.program.domain.Program;
 import com.example.kpick.program.domain.ProgramInterest;
 import com.example.kpick.program.repository.ProgramInterestRepository;
@@ -59,6 +63,7 @@ public class ProfileService {
     private final UserVoteRepository userVoteRepository;
     private final CommunityCommentRepository communityCommentRepository;
     private final ProfileBadgeRepository profileBadgeRepository;
+    private final PushNotificationService pushNotificationService;
 
     private static final List<ProfileBadgeTemplate> DEFAULT_BADGES = List.of(
             new ProfileBadgeTemplate("FIRE_TORI", "불꽃토리", "3연속 정답", "🔥"),
@@ -131,6 +136,14 @@ public class ProfileService {
         }
         profile.updateNickname(nickname);
         return ProfileNicknameResponse.from(profile);
+    }
+
+    @Transactional
+    public ProfileImageResponse updateProfileImage(Long profileId, UpdateProfileImageRequest request) {
+        if (request == null) throw new IllegalArgumentException("Request body is required.");
+        Profile profile = findProfile(profileId);
+        profile.updateProfileImage(request.getProfileImageUrl());
+        return ProfileImageResponse.from(profile);
     }
 
     @Transactional(readOnly = true)
@@ -207,14 +220,32 @@ public class ProfileService {
         String badgeCode = normalizeRequired(request.getBadgeCode(), "badgeCode");
         ProfileBadgeTemplate template = findBadgeTemplate(badgeCode);
         ProfileBadge badge = profileBadgeRepository.findByProfileIdAndBadgeCode(profileId, badgeCode)
-                .orElseGet(() -> profileBadgeRepository.save(ProfileBadge.create(
-                        profileId,
-                        badgeCode,
-                        valueOrDefault(request.getBadgeName(), template.badgeName()),
-                        valueOrDefault(request.getDescription(), template.description()),
-                        valueOrDefault(request.getEmoji(), template.emoji())
-                )));
+                .orElseGet(() -> createBadgeAndNotify(profileId, request, template, badgeCode));
         return ProfileBadgeResponse.ProfileBadgeItemResponse.acquired(badge);
+    }
+
+    private ProfileBadge createBadgeAndNotify(
+            Long profileId,
+            CreateProfileBadgeRequest request,
+            ProfileBadgeTemplate template,
+            String badgeCode
+    ) {
+        ProfileBadge badge = profileBadgeRepository.save(ProfileBadge.create(
+                profileId,
+                badgeCode,
+                valueOrDefault(request.getBadgeName(), template.badgeName()),
+                valueOrDefault(request.getDescription(), template.description()),
+                valueOrDefault(request.getEmoji(), template.emoji())
+        ));
+        pushNotificationService.notify(
+                profileId,
+                PushNotificationType.SPECIAL_BADGE,
+                "스페셜 뱃지를 획득했어요",
+                badge.getBadgeName() + " 뱃지를 확인해보세요.",
+                "PROFILE_BADGE",
+                badge.getId()
+        );
+        return badge;
     }
 
     private int findRank(Long profileId, ToLongFunction<Profile> scoreGetter) {
@@ -244,14 +275,13 @@ public class ProfileService {
         MissionOption correctOption = findCorrectMissionOption(mission.getId());
         String resultStatus = getMissionResultStatus(mission, selectedOption, correctOption);
         long earnedPoint = "CORRECT".equals(resultStatus) ? calculateMissionRewardPoint(mission, correctOption) : 0L;
-        String programName = programRepository.findById(mission.getProgramId())
-                .map(Program::getProgramName)
-                .orElse(null);
+        Program program = programRepository.findById(mission.getProgramId()).orElse(null);
 
         return new MissionHistoryResponse.MissionHistoryItemResponse(
                 mission.getId(),
                 mission.getProgramId(),
-                programName,
+                program == null ? null : program.getProgramName(),
+                program == null ? null : program.getThumbnailImageUrl(),
                 mission.getEpisode(),
                 mission.getMissionName(),
                 selectedOption.getId(),

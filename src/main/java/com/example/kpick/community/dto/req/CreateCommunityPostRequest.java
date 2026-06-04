@@ -1,8 +1,10 @@
 package com.example.kpick.community.dto.req;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.kpick.community.domain.CommunityPostType;
 import com.example.kpick.community.thread.dto.req.CreateThreadRequest;
 import com.example.kpick.community.uservote.dto.req.CreateUserVoteRequest;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,17 +17,24 @@ import java.util.List;
 @AllArgsConstructor
 public class CreateCommunityPostRequest {
     private CommunityPostType postType;
+    @JsonIgnore
+    @Schema(hidden = true)
     private Long profileId;
     private Long programId;
     private Long missionId;
     private String title;
     private String description;
     private Boolean isNicknamePublic;
+    private List<String> imageUrls;
     private LocalDateTime dueDateTime;
     private List<OptionRequest> options;
 
+    public CreateCommunityPostRequest withProfileId(Long profileId) {
+        return new CreateCommunityPostRequest(postType, profileId, programId, missionId, title, description, isNicknamePublic, imageUrls, dueDateTime, options);
+    }
+
     public CreateThreadRequest toCreateThreadRequest() {
-        return new CreateThreadRequest(profileId, programId, missionId, title, description, isNicknamePublic);
+        return new CreateThreadRequest(profileId, programId, missionId, title, description, isNicknamePublic, imageUrls);
     }
 
     public CreateUserVoteRequest toCreateUserVoteRequest() {

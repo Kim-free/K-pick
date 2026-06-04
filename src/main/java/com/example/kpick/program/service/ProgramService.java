@@ -6,6 +6,7 @@ import com.example.kpick.program.domain.Program;
 import com.example.kpick.program.domain.Genre;
 import com.example.kpick.program.dto.req.CreateProgramRequest;
 import com.example.kpick.program.dto.req.UpdateProgramRequest;
+import com.example.kpick.program.dto.res.AdminProgramListResponse;
 import com.example.kpick.program.dto.res.ProgramDetailsResponse;
 import com.example.kpick.program.dto.res.ProgramEpisodeResponse;
 import com.example.kpick.program.dto.res.ProgramListResponse;
@@ -37,19 +38,14 @@ public class ProgramService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProgramResponse> getPrograms(Boolean isOnAir) {
-        return getPrograms(null, null, isOnAir, null);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ProgramResponse> getPrograms(String keyword, Genre genre, Boolean isOnAir, Boolean isExposed) {
+    public List<AdminProgramListResponse> getAdminPrograms(String keyword, Genre genre, Boolean isOnAir, Boolean isExposed) {
         return programRepository.findAll().stream()
                 .filter(program -> keyword == null || keyword.isBlank()
                         || program.getProgramName().toLowerCase().contains(keyword.trim().toLowerCase()))
                 .filter(program -> genre == null || program.getGenre() == genre)
                 .filter(program -> isOnAir == null || program.isOnAir() == isOnAir)
                 .filter(program -> isExposed == null || program.isExposed() == isExposed)
-                .map(ProgramResponse::from)
+                .map(program -> AdminProgramListResponse.from(program, missionRepository.countByProgramId(program.getId())))
                 .toList();
     }
 

@@ -28,6 +28,7 @@ public class Program {
     private int episodeCount;
     private LocalDate broadcastStartDate;
     private LocalDate broadcastEndDate;
+    private LocalDate registeredDate;
     private String thumbnailImageUrl;
     private boolean isOnAir;
     private boolean isExposed;
@@ -43,6 +44,7 @@ public class Program {
                 .episodeCount(request.getEpisodeCount() == null ? 0 : request.getEpisodeCount())
                 .broadcastStartDate(request.getBroadcastStartDate())
                 .broadcastEndDate(request.getBroadcastEndDate())
+                .registeredDate(LocalDate.now())
                 .thumbnailImageUrl(request.getThumbnailImageUrl() == null ? null : request.getThumbnailImageUrl().trim())
                 .isOnAir(request.getIsOnAir() == null ? calculateOnAir(request.getBroadcastEndDate()) : request.getIsOnAir())
                 .isExposed(request.getIsExposed())

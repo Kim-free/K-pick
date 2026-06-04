@@ -23,6 +23,7 @@ public class MissionHistoryResponse {
         private Long missionId;
         private Long programId;
         private String programName;
+        private String programThumbnailImageUrl;
         private String episode;
         private String missionName;
         private Long selectedMissionOptionId;

@@ -128,6 +128,7 @@ public class RankingService {
                         ranking.getRank(),
                         ranking.getProfileId(),
                         ranking.getNickname(),
+                        ranking.getProfileImageUrl(),
                         ranking.getScore(),
                         ranking.getPointTier(),
                         createNextPointTierMessage(ranking.getScore())
@@ -190,6 +191,7 @@ public class RankingService {
                 ranking.getRank(),
                 ranking.getProfileId(),
                 ranking.getNickname(),
+                ranking.getProfileImageUrl(),
                 ranking.getScore(),
                 threadCount,
                 commentCount,

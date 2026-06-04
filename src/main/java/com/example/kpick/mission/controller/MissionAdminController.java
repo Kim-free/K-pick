@@ -2,7 +2,7 @@ package com.example.kpick.mission.controller;
 
 import com.example.kpick.mission.dto.req.ConfirmMissionResultRequest;
 import com.example.kpick.mission.dto.req.CreateMissionRequest;
-import com.example.kpick.mission.domain.MissionState;
+import com.example.kpick.mission.domain.AdminMissionStatus;
 import com.example.kpick.mission.dto.res.MissionAdminResponse;
 import com.example.kpick.mission.dto.res.MissionResponse;
 import com.example.kpick.mission.service.MissionService;
@@ -21,15 +21,18 @@ public class MissionAdminController {
     public ResponseEntity<java.util.List<MissionAdminResponse>> getAdminMissions(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long programId,
-            @RequestParam(required = false) MissionState missionState
+            @RequestParam(required = false) AdminMissionStatus adminStatus
     ) {
-        return ResponseEntity.ok(missionService.getAdminMissions(keyword, programId, missionState));
+        return ResponseEntity.ok(missionService.getAdminMissions(keyword, programId, adminStatus));
     }
 
     @PostMapping
-    public ResponseEntity<MissionResponse> createMission(@RequestBody CreateMissionRequest request) {
+    public ResponseEntity<MissionResponse> createMission(
+            @RequestAttribute("authenticatedProfileId") Long profileId,
+            @RequestBody CreateMissionRequest request
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(missionService.createMission(request));
+                .body(missionService.createMission(request.withProfileId(profileId)));
     }
 
     @PatchMapping("/{missionId}/confirm-result")

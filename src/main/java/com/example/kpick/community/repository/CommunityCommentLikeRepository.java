@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface CommunityCommentLikeRepository extends JpaRepository<CommunityCommentLike, Long> {
     Optional<CommunityCommentLike> findByCommunityCommentIdAndProfileId(Long communityCommentId, Long profileId);
+    void deleteByCommunityCommentId(Long communityCommentId);
 }

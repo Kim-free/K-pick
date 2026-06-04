@@ -5,8 +5,6 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class AppleLoginRequest {
-    private String identityToken;
+public class OAuthLoginRequest {
     private String authorizationCode;
-    private String fullName;
 }

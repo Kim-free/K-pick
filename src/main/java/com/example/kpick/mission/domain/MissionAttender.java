@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @AllArgsConstructor @NoArgsConstructor @Builder
@@ -26,4 +28,6 @@ public class MissionAttender {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mission_option_id", nullable = false)
     private MissionOption missionOption;
+
+    private LocalDateTime createdAt;
 }

@@ -25,6 +25,7 @@ public class Mission {
     private LocalDateTime dueDateTime;
     private int coinFee;
     private int attenderCount;
+    private Boolean isActive;
 
     @Enumerated(EnumType.STRING)
     private ResultPublishTiming resultPublishTiming;
@@ -50,6 +51,7 @@ public class Mission {
                 .dueDateTime(request.getDueDateTime())
                 .coinFee(request.getCoinFee())
                 .attenderCount(0)
+                .isActive(request.getIsActive() == null || request.getIsActive())
                 .resultPublishTiming(ResultPublishTiming.IMMEDIATE)
                 .missionState(MissionState.ONGOING)
                 .build();

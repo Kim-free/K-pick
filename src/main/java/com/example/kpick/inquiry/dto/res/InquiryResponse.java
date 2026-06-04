@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -17,6 +18,7 @@ public class InquiryResponse {
     private Long profileId;
     private InquiryType inquiryType;
     private String title;
+    private List<String> imageUrls;
     private InquiryStatus inquiryStatus;
     private LocalDateTime createdAt;
 
@@ -26,6 +28,7 @@ public class InquiryResponse {
                 inquiry.getProfileId(),
                 inquiry.getInquiryType(),
                 inquiry.getTitle(),
+                inquiry.getImageUrls(),
                 inquiry.getInquiryStatus(),
                 inquiry.getCreatedAt()
         );
