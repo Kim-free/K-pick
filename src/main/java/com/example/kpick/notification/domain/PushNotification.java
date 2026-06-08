@@ -64,4 +64,12 @@ public class PushNotification {
         deliveryStatus = PushDeliveryStatus.READ;
         readAt = LocalDateTime.now();
     }
+
+    public void markSent() {
+        deliveryStatus = PushDeliveryStatus.SENT;
+    }
+
+    public void markFailed() {
+        deliveryStatus = PushDeliveryStatus.FAILED;
+    }
 }

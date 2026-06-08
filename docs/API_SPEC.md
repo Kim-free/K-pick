@@ -103,9 +103,9 @@ ADMIN_EMAILS=admin@example.com,owner@example.com
 }
 ```
 
-배포 환경에는 `S3_BUCKET`, `S3_REGION`을 설정한다. CDN을 사용하면 `S3_PUBLIC_BASE_URL`도 설정한다. AWS 액세스 키는 애플리케이션 환경변수에 저장하지 않는다. EC2에서는 Instance Profile, ECS에서는 Task Role을 서버에 연결하며 AWS SDK가 Role의 임시 자격 증명을 자동으로 사용한다.
+배포 환경에는 `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`를 설정한다. CDN을 사용하면 `S3_PUBLIC_BASE_URL`도 설정한다. 로컬 기본 설정에는 앱 실행을 위한 dummy key가 들어있으므로, 실제 S3 업로드를 테스트할 때는 반드시 실제 access key 환경변수를 넣어야 한다.
 
-Role에는 최소한 업로드 대상 버킷의 `s3:PutObject` 권한을 부여한다.
+Access Key가 연결된 IAM User에는 최소한 업로드 대상 버킷의 `s3:PutObject` 권한을 부여한다.
 
 ```json
 {

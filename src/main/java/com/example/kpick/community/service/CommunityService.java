@@ -405,7 +405,7 @@ public class CommunityService {
             pushNotificationService.notify(
                     post.getProfileId(),
                     PushNotificationType.LIKE,
-                    "게시글에 좋아요가 달렸어요",
+                    "좋아요",
                     post.getTitle() + " 글을 좋아해요.",
                     post.getClass().getSimpleName().toUpperCase(),
                     post.getId()
@@ -418,7 +418,7 @@ public class CommunityService {
             pushNotificationService.notify(
                     post.getProfileId(),
                     PushNotificationType.COMMENT,
-                    "게시글에 댓글이 달렸어요",
+                    "새 댓글",
                     post.getTitle() + " 글에 새로운 댓글이 달렸어요.",
                     comment.getPostType().name(),
                     comment.getPostId()
@@ -431,7 +431,7 @@ public class CommunityService {
             pushNotificationService.notify(
                     comment.getProfileId(),
                     PushNotificationType.LIKE,
-                    "댓글에 좋아요가 달렸어요",
+                    "좋아요",
                     comment.getContent(),
                     comment.getPostType().name(),
                     comment.getPostId()

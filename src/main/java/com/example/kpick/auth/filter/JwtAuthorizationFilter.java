@@ -1,6 +1,7 @@
 package com.example.kpick.auth.filter;
 
 import com.example.kpick.appUser.domain.AppUserRole;
+import com.example.kpick.appUser.repository.AppUserRepository;
 import com.example.kpick.auth.service.JwtClaims;
 import com.example.kpick.auth.service.JwtProvider;
 import jakarta.servlet.FilterChain;
@@ -21,9 +22,11 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     public static final String APP_USER_ROLE_ATTRIBUTE = "authenticatedAppUserRole";
 
     private final JwtProvider jwtProvider;
+    private final AppUserRepository appUserRepository;
 
-    public JwtAuthorizationFilter(JwtProvider jwtProvider) {
+    public JwtAuthorizationFilter(JwtProvider jwtProvider, AppUserRepository appUserRepository) {
         this.jwtProvider = jwtProvider;
+        this.appUserRepository = appUserRepository;
     }
 
     @Override
@@ -35,6 +38,10 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         try {
             String accessToken = extractBearerToken(request);
             JwtClaims claims = jwtProvider.parseAndValidate(accessToken);
+            if (isWithdrawnAppUser(claims)) {
+                writeUnauthorizedResponse(response, "Withdrawn app user.");
+                return;
+            }
             if (isAdminPath(request) && claims.getAppUserRole() != AppUserRole.ADMIN) {
                 writeForbiddenResponse(response, "Admin role is required.");
                 return;
@@ -68,6 +75,12 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     private boolean isAdminPath(HttpServletRequest request) {
         return request.getRequestURI().startsWith("/api/admin/");
+    }
+
+    private boolean isWithdrawnAppUser(JwtClaims claims) {
+        return appUserRepository.findById(claims.getAppUserId())
+                .map(appUser -> appUser.isWithdrawn())
+                .orElse(true);
     }
 
     private void writeUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {

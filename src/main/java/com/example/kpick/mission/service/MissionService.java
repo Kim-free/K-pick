@@ -115,8 +115,8 @@ public class MissionService {
             pushNotificationService.notify(
                     profile.getId(),
                     PushNotificationType.POINT_REWARD,
-                    "포인트가 지급되었어요",
-                    mission.getMissionName() + " 정답 보상으로 " + rewardPoint + "pt를 받았어요.",
+                    "보상 지급",
+                    mission.getMissionName() + " 정답 보상으로 +" + rewardPoint + "포인트를 받았어요.",
                     "MISSION",
                     mission.getId()
             );
@@ -128,21 +128,21 @@ public class MissionService {
         PointTier previousTier = PointTier.from(previousPoint);
         PointTier currentTier = PointTier.from(currentPoint);
         if (previousTier != currentTier) {
-            pushNotificationService.notify(
+                pushNotificationService.notify(
                     profile.getId(),
                     PushNotificationType.RANKING_TIER_CHANGE,
-                    "랭킹 단계가 올랐어요",
-                    currentTier.getDisplayName(currentPoint) + " 단계에 도달했어요.",
+                    "랭킹 변동",
+                    "시즌 랭킹 단계가 " + currentTier.getDisplayName(currentPoint) + "로 올랐어요.",
                     "RANKING",
                     null
             );
             return;
         }
         if (!currentTier.getDisplayName(previousPoint).equals(currentTier.getDisplayName(currentPoint))) {
-            pushNotificationService.notify(
+                pushNotificationService.notify(
                     profile.getId(),
                     PushNotificationType.GROWTH_BADGE_LEVEL_UP,
-                    "성장 뱃지 레벨이 올랐어요",
+                    "성장 뱃지 레벨업",
                     currentTier.getDisplayName(currentPoint) + " 단계에 도달했어요.",
                     "RANKING",
                     null
@@ -155,8 +155,8 @@ public class MissionService {
                 pushNotificationService.notify(
                         interest.getProfile().getId(),
                         PushNotificationType.INTERESTED_PROGRAM,
-                        "관심 프로그램의 새 미션",
-                        mission.getMissionName() + " 미션이 등록되었어요.",
+                        "새 미션 등록",
+                        getProgramDisplayName(mission) + " 새 미션이 올라왔어요.",
                         "MISSION",
                         mission.getId()
                 )
@@ -168,12 +168,24 @@ public class MissionService {
                 pushNotificationService.notify(
                         attender.getProfile().getId(),
                         PushNotificationType.MISSION_RESULT,
-                        "미션 결과가 확정되었어요",
-                        mission.getMissionName() + " 결과를 확인해보세요.",
+                        "결과 공개",
+                        getProgramDisplayName(mission) + " 결과가 나왔어요!",
                         "MISSION",
                         mission.getId()
                 )
         );
+    }
+
+    private String getProgramDisplayName(Mission mission) {
+        return programRepository.findById(mission.getProgramId())
+                .map(program -> program.getProgramName() + " " + nullToEmpty(mission.getEpisode()).trim())
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .orElse(mission.getMissionName());
+    }
+
+    private String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     private List<MissionOption> saveOptions(Mission mission, List<MissionOptionRequest> optionRequests) {

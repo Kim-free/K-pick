@@ -29,6 +29,7 @@ public class PushNotificationSetting {
     private boolean rankingTierChangeEnabled;
     private boolean specialBadgeEnabled;
     private boolean growthBadgeLevelUpEnabled;
+    private boolean attendanceReminderEnabled;
     private boolean eventNoticeEnabled;
     private boolean updateNoticeEnabled;
 
@@ -43,6 +44,7 @@ public class PushNotificationSetting {
                 .rankingTierChangeEnabled(true)
                 .specialBadgeEnabled(true)
                 .growthBadgeLevelUpEnabled(false)
+                .attendanceReminderEnabled(true)
                 .eventNoticeEnabled(true)
                 .updateNoticeEnabled(false)
                 .build();
@@ -57,6 +59,7 @@ public class PushNotificationSetting {
         rankingTierChangeEnabled = valueOrCurrent(request.getRankingTierChangeEnabled(), rankingTierChangeEnabled);
         specialBadgeEnabled = valueOrCurrent(request.getSpecialBadgeEnabled(), specialBadgeEnabled);
         growthBadgeLevelUpEnabled = valueOrCurrent(request.getGrowthBadgeLevelUpEnabled(), growthBadgeLevelUpEnabled);
+        attendanceReminderEnabled = valueOrCurrent(request.getAttendanceReminderEnabled(), attendanceReminderEnabled);
         eventNoticeEnabled = valueOrCurrent(request.getEventNoticeEnabled(), eventNoticeEnabled);
         updateNoticeEnabled = valueOrCurrent(request.getUpdateNoticeEnabled(), updateNoticeEnabled);
     }
@@ -64,6 +67,7 @@ public class PushNotificationSetting {
     public boolean isEnabled(PushNotificationType notificationType) {
         return switch (notificationType) {
             case MISSION_RESULT -> missionResultEnabled;
+            case MISSION_CLOSING_SOON -> interestedProgramEnabled;
             case POINT_REWARD -> pointRewardEnabled;
             case INTERESTED_PROGRAM -> interestedProgramEnabled;
             case COMMENT -> commentEnabled;
@@ -71,6 +75,7 @@ public class PushNotificationSetting {
             case RANKING_TIER_CHANGE -> rankingTierChangeEnabled;
             case SPECIAL_BADGE -> specialBadgeEnabled;
             case GROWTH_BADGE_LEVEL_UP -> growthBadgeLevelUpEnabled;
+            case ATTENDANCE_REMINDER -> attendanceReminderEnabled;
             case EVENT_NOTICE -> eventNoticeEnabled;
             case UPDATE_NOTICE -> updateNoticeEnabled;
         };

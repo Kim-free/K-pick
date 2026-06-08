@@ -83,10 +83,9 @@ public class CommunityController {
     public ResponseEntity<CommunityLikeToggleResponse> toggleCommunityPostLike(
             @PathVariable CommunityPostType postType,
             @PathVariable Long postId,
-            @RequestAttribute("authenticatedProfileId") Long profileId,
-            @RequestBody ToggleCommunityLikeRequest request
+            @RequestAttribute("authenticatedProfileId") Long profileId
     ) {
-        return ResponseEntity.ok(communityService.togglePostLike(postType, postId, request.withProfileId(profileId)));
+        return ResponseEntity.ok(communityService.togglePostLike(postType, postId, new ToggleCommunityLikeRequest(profileId)));
     }
 
     @PostMapping("/api/community/{postType}/{postId}/comments")
@@ -103,10 +102,9 @@ public class CommunityController {
     public ResponseEntity<CommunityLikeToggleResponse> toggleCommunityCommentLike(
             @PathVariable CommunityPostType postType,
             @PathVariable Long communityCommentId,
-            @RequestAttribute("authenticatedProfileId") Long profileId,
-            @RequestBody ToggleCommunityLikeRequest request
+            @RequestAttribute("authenticatedProfileId") Long profileId
     ) {
-        return ResponseEntity.ok(communityService.toggleCommentLike(postType, communityCommentId, request.withProfileId(profileId)));
+        return ResponseEntity.ok(communityService.toggleCommentLike(postType, communityCommentId, new ToggleCommunityLikeRequest(profileId)));
     }
 
     @PostMapping("/api/user-votes/{userVoteId}/vote")

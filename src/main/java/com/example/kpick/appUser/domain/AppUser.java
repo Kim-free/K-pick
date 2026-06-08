@@ -30,6 +30,9 @@ public class AppUser {
     @Enumerated(EnumType.STRING)
     private AppUserRole appUserRole;
 
+    private Boolean withdrawn;
+    private LocalDateTime withdrawnAt;
+
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;
 
@@ -42,6 +45,7 @@ public class AppUser {
                 .providerId(providerId)
                 .emailVerified(emailVerified)
                 .appUserRole(AppUserRole.USER)
+                .withdrawn(false)
                 .createdAt(now)
                 .lastLoginAt(now)
                 .build();
@@ -55,6 +59,9 @@ public class AppUser {
         if (this.appUserRole == null) {
             this.appUserRole = AppUserRole.USER;
         }
+        if (this.withdrawn == null) {
+            this.withdrawn = false;
+        }
     }
 
     public void grantAdminRole() {
@@ -63,5 +70,17 @@ public class AppUser {
 
     public AppUserRole getRoleOrDefault() {
         return this.appUserRole == null ? AppUserRole.USER : this.appUserRole;
+    }
+
+    public boolean isWithdrawn() {
+        return Boolean.TRUE.equals(this.withdrawn);
+    }
+
+    public void withdraw() {
+        if (isWithdrawn()) {
+            return;
+        }
+        this.withdrawn = true;
+        this.withdrawnAt = LocalDateTime.now();
     }
 }

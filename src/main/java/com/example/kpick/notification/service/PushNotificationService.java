@@ -29,6 +29,7 @@ public class PushNotificationService {
     private final PushDeviceTokenRepository pushDeviceTokenRepository;
     private final PushNotificationRepository pushNotificationRepository;
     private final ProfileRepository profileRepository;
+    private final FcmPushSender fcmPushSender;
 
     @Transactional
     public PushNotificationSettingResponse getSetting(Long profileId) {
@@ -98,10 +99,11 @@ public class PushNotificationService {
         if (profileId == null || !getOrCreateSetting(profileId).isEnabled(notificationType)) {
             return;
         }
-        PushDeliveryStatus status = pushDeviceTokenRepository.findByProfileId(profileId).isEmpty()
+        List<PushDeviceToken> deviceTokens = pushDeviceTokenRepository.findByProfileId(profileId);
+        PushDeliveryStatus status = deviceTokens.isEmpty()
                 ? PushDeliveryStatus.STORED
                 : PushDeliveryStatus.PENDING;
-        pushNotificationRepository.save(PushNotification.create(
+        PushNotification notification = pushNotificationRepository.save(PushNotification.create(
                 profileId,
                 notificationType,
                 title,
@@ -110,6 +112,14 @@ public class PushNotificationService {
                 targetId,
                 status
         ));
+        if (!deviceTokens.isEmpty()) {
+            FcmSendResult sendResult = fcmPushSender.send(notification, deviceTokens);
+            if (sendResult.hasSuccess()) {
+                notification.markSent();
+            } else if (sendResult.hasFailure()) {
+                notification.markFailed();
+            }
+        }
     }
 
     @Transactional

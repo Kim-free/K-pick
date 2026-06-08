@@ -240,7 +240,7 @@ public class ProfileService {
         pushNotificationService.notify(
                 profileId,
                 PushNotificationType.SPECIAL_BADGE,
-                "스페셜 뱃지를 획득했어요",
+                "스페셜 뱃지 획득",
                 badge.getBadgeName() + " 뱃지를 확인해보세요.",
                 "PROFILE_BADGE",
                 badge.getId()

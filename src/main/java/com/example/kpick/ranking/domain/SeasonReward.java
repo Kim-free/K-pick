@@ -6,6 +6,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,6 +26,7 @@ public class SeasonReward {
 
     private Long rankingSeasonId;
     private Long profileId;
+    @Column(name = "reward_rank")
     private int rank;
     private long seasonPoint;
     private String rewardDescription;

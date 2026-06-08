@@ -3,8 +3,9 @@ package com.example.kpick.image.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
@@ -13,8 +14,19 @@ import java.net.URI;
 @Configuration
 public class S3PresignerConfig {
     @Bean
-    public AwsCredentialsProvider awsCredentialsProvider() {
-        return DefaultCredentialsProvider.create();
+    public AwsCredentialsProvider awsCredentialsProvider(
+            @Value("${storage.s3.access-key:}") String accessKey,
+            @Value("${storage.s3.secret-key:}") String secretKey
+    ) {
+        if (accessKey == null || accessKey.isBlank()) {
+            throw new IllegalStateException("storage.s3.access-key must be configured.");
+        }
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalStateException("storage.s3.secret-key must be configured.");
+        }
+        return StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(accessKey.trim(), secretKey.trim())
+        );
     }
 
     @Bean(destroyMethod = "close")

@@ -16,6 +16,7 @@ public class PushNotificationSettingResponse {
     private boolean rankingTierChangeEnabled;
     private boolean specialBadgeEnabled;
     private boolean growthBadgeLevelUpEnabled;
+    private boolean attendanceReminderEnabled;
     private boolean eventNoticeEnabled;
     private boolean updateNoticeEnabled;
 
@@ -30,6 +31,7 @@ public class PushNotificationSettingResponse {
                 setting.isRankingTierChangeEnabled(),
                 setting.isSpecialBadgeEnabled(),
                 setting.isGrowthBadgeLevelUpEnabled(),
+                setting.isAttendanceReminderEnabled(),
                 setting.isEventNoticeEnabled(),
                 setting.isUpdateNoticeEnabled()
         );

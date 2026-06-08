@@ -14,6 +14,7 @@ public class UpdatePushNotificationSettingRequest {
     private Boolean rankingTierChangeEnabled;
     private Boolean specialBadgeEnabled;
     private Boolean growthBadgeLevelUpEnabled;
+    private Boolean attendanceReminderEnabled;
     private Boolean eventNoticeEnabled;
     private Boolean updateNoticeEnabled;
 }
