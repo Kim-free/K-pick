@@ -15,7 +15,9 @@ import com.example.kpick.mission.repository.MissionAttenderRepository;
 import com.example.kpick.mission.repository.MissionOptionRepository;
 import com.example.kpick.profile.domain.Profile;
 import com.example.kpick.profile.domain.ProfileBadge;
+import com.example.kpick.profile.domain.ProfileGender;
 import com.example.kpick.profile.dto.req.CreateProfileBadgeRequest;
+import com.example.kpick.profile.dto.req.CompleteOnboardingProfileRequest;
 import com.example.kpick.profile.dto.req.UpdateNicknameRequest;
 import com.example.kpick.profile.dto.req.UpdateProfileImageRequest;
 import com.example.kpick.profile.dto.req.UpdateProgramInterestsRequest;
@@ -23,6 +25,7 @@ import com.example.kpick.profile.dto.res.CommunityActivityResponse;
 import com.example.kpick.profile.dto.res.MissionHistoryResponse;
 import com.example.kpick.profile.dto.res.MyPageResponse;
 import com.example.kpick.profile.dto.res.NicknameCheckResponse;
+import com.example.kpick.profile.dto.res.OnboardingProfileResponse;
 import com.example.kpick.profile.dto.res.ProfileBadgeResponse;
 import com.example.kpick.profile.dto.res.ProfileNicknameResponse;
 import com.example.kpick.profile.dto.res.ProfileImageResponse;
@@ -54,6 +57,8 @@ import java.util.stream.IntStream;
 @Service
 @RequiredArgsConstructor
 public class ProfileService {
+    private static final int INVITE_REWARD_PICK = 100;
+
     private final ProfileRepository profileRepository;
     private final ProgramRepository programRepository;
     private final ProgramInterestRepository programInterestRepository;
@@ -124,6 +129,26 @@ public class ProfileService {
         List<ProgramInterest> savedInterests = programInterestRepository.saveAll(interests);
 
         return ProgramInterestResponse.from(profileId, savedInterests);
+    }
+
+    @Transactional
+    public OnboardingProfileResponse completeOnboardingProfile(Long profileId, CompleteOnboardingProfileRequest request) {
+        if (request == null) throw new IllegalArgumentException("Request body is required.");
+        Profile profile = findProfile(profileId);
+        String nickname = normalizeRequired(request.getNickname(), "nickname");
+        if (profileRepository.existsByNicknameAndIdNot(nickname, profileId)) {
+            throw new IllegalArgumentException("Nickname already exists.");
+        }
+
+        profile.completeOnboarding(
+                nickname,
+                request.getProfileImageUrl(),
+                request.getGender(),
+                request.getBirthDate(),
+                request.getJoinPath()
+        );
+        int inviteRewardPick = applyInviteReward(profile, request.getFriendInviteCode());
+        return OnboardingProfileResponse.from(profile, inviteRewardPick);
     }
 
     @Transactional
@@ -267,6 +292,25 @@ public class ProfileService {
     private Program findProgram(Long programId) {
         return programRepository.findById(programId)
                 .orElseThrow(() -> new IllegalArgumentException("Program not found. programId=" + programId));
+    }
+
+    private int applyInviteReward(Profile profile, String friendInviteCode) {
+        if (friendInviteCode == null || friendInviteCode.isBlank()) {
+            return 0;
+        }
+        if (profile.hasReceivedInviteReward()) {
+            throw new IllegalArgumentException("Invite reward has already been received.");
+        }
+        String normalizedInviteCode = friendInviteCode.trim().toUpperCase();
+        if (profile.getInviteCode() != null && profile.getInviteCode().equalsIgnoreCase(normalizedInviteCode)) {
+            throw new IllegalArgumentException("Cannot use your own invite code.");
+        }
+        Profile inviterProfile = profileRepository.findByInviteCode(normalizedInviteCode)
+                .orElseThrow(() -> new IllegalArgumentException("Invite code not found."));
+        profile.markInvitedBy(inviterProfile.getId());
+        profile.addCoin(INVITE_REWARD_PICK);
+        inviterProfile.addCoin(INVITE_REWARD_PICK);
+        return INVITE_REWARD_PICK;
     }
 
     private MissionHistoryResponse.MissionHistoryItemResponse toMissionHistoryItem(MissionAttender attender) {

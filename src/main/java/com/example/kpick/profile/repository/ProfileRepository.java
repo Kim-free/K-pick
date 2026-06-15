@@ -10,6 +10,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     List<Profile> findAllByOrderByMissionPointDesc();
     List<Profile> findAllByOrderByActivityPointDesc();
     Optional<Profile> findByAppUserId(Long appUserId);
+    Optional<Profile> findByInviteCode(String inviteCode);
     boolean existsByInviteCode(String inviteCode);
     boolean existsByNickname(String nickname);
     boolean existsByNicknameAndIdNot(String nickname, Long profileId);

@@ -90,6 +90,10 @@ class AuthTokenApiSmokeTest {
     }
 
     private void callProfileApis(String accessToken, TestFixture fixture) throws Exception {
+        authorizedPatch(accessToken, "/api/profiles/me/onboarding",
+                "{\"nickname\":\"SmokeOnboard\",\"profileImageUrl\":\"https://example.com/onboarding.png\","
+                        + "\"gender\":\"OTHER\",\"birthDate\":\"2000-01-01\",\"joinPath\":\"INSTAGRAM\","
+                        + "\"friendInviteCode\":\"" + fixture.targetProfile.getInviteCode() + "\"}");
         authorizedGet(accessToken, "/api/profiles/me/my-page");
         authorizedGet(accessToken, "/api/profiles/nickname/check?nickname=SmokeNickname");
         authorizedPatch(accessToken, "/api/profiles/me/nickname", "{\"nickname\":\"SmokeNick\"}");

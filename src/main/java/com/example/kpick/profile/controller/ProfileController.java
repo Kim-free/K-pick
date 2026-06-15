@@ -1,6 +1,7 @@
 package com.example.kpick.profile.controller;
 
 import com.example.kpick.profile.dto.req.CreateProfileBadgeRequest;
+import com.example.kpick.profile.dto.req.CompleteOnboardingProfileRequest;
 import com.example.kpick.profile.dto.req.UpdateNicknameRequest;
 import com.example.kpick.profile.dto.req.UpdateProfileImageRequest;
 import com.example.kpick.profile.dto.req.UpdateProgramInterestsRequest;
@@ -8,6 +9,7 @@ import com.example.kpick.profile.dto.res.CommunityActivityResponse;
 import com.example.kpick.profile.dto.res.MissionHistoryResponse;
 import com.example.kpick.profile.dto.res.MyPageResponse;
 import com.example.kpick.profile.dto.res.NicknameCheckResponse;
+import com.example.kpick.profile.dto.res.OnboardingProfileResponse;
 import com.example.kpick.profile.dto.res.ProfileBadgeResponse;
 import com.example.kpick.profile.dto.res.ProfileNicknameResponse;
 import com.example.kpick.profile.dto.res.ProfileImageResponse;
@@ -35,6 +37,14 @@ public class ProfileController {
     @GetMapping("/me/my-page")
     public ResponseEntity<MyPageResponse> getMyPage(@RequestAttribute("authenticatedProfileId") Long profileId) {
         return ResponseEntity.ok(profileService.getMyPage(profileId));
+    }
+
+    @PatchMapping("/me/onboarding")
+    public ResponseEntity<OnboardingProfileResponse> completeOnboardingProfile(
+            @RequestAttribute("authenticatedProfileId") Long profileId,
+            @RequestBody CompleteOnboardingProfileRequest request
+    ) {
+        return ResponseEntity.ok(profileService.completeOnboardingProfile(profileId, request));
     }
 
     @PatchMapping("/me/nickname")

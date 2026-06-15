@@ -124,6 +124,7 @@ Access Key가 연결된 IAM User에는 최소한 업로드 대상 버킷의 `s3:
 ▶ Apple 로그인 : `POST /api/auth/apple` -완-
 ▶ Google 로그인 : `POST /api/auth/google` -완-
 ▶ Kakao 로그인 : `POST /api/auth/kakao` -완-
+▶ 회원 탈퇴 : `DELETE /api/app-users/me` -완-
 
 ## Apple 로그인
 
@@ -202,6 +203,20 @@ Access Key가 연결된 IAM User에는 최소한 업로드 대상 버킷의 `s3:
 ### Response
 
 `AuthResponse`
+
+## 회원 탈퇴
+
+`DELETE /api/app-users/me`
+
+JWT의 `appUserId`를 기준으로 현재 로그인한 AppUser를 탈퇴 처리한다. 기존 게시글, 미션 참여, 랭킹 기록과의 연결을 보존하기 위해 물리 삭제하지 않고 탈퇴 상태로 변경한다. 탈퇴 후 기존 JWT로 일반 API를 호출하면 `401 Unauthorized`를 반환한다.
+
+### Request
+
+없음
+
+### Response
+
+`204 No Content`
 
 ### OAuth 서버 환경변수
 
@@ -321,6 +336,7 @@ Access Key가 연결된 IAM User에는 최소한 업로드 대상 버킷의 `s3:
 # Profile (프로필)
 
 ▶ 마이페이지 조회 : `GET /api/profiles/me/my-page` -완-
+▶ 온보딩 프로필 설정 : `PATCH /api/profiles/me/onboarding` -완-
 ▶ 프로필 이미지 변경 : `PATCH /api/profiles/me/image` -완-
 ▶ 닉네임 중복 확인 : `GET /api/profiles/nickname/check?nickname=나의닉네임` -완-
 ▶ 닉네임 변경 : `PATCH /api/profiles/me/nickname` -완-
@@ -380,6 +396,62 @@ Access Key가 연결된 IAM User에는 최소한 업로드 대상 버킷의 `s3:
 | coin | long | ✅ | 보유 Pick |
 | growthMessage | String | ✅ | 다음 성장 단계 안내 |
 | inviteCode | String | ✅ | 초대 코드 |
+
+## 온보딩 프로필 설정
+
+`PATCH /api/profiles/me/onboarding`
+
+온보딩의 프로필 기본 정보 입력 화면에서 닉네임, 프로필 이미지, 성별, 생년월일, 가입 경로, 친구 초대코드를 한 번에 저장한다. 친구 초대코드는 선택값이며, 유효한 코드를 처음 입력하면 가입자와 초대한 사용자에게 각각 `100 Pick`을 지급한다.
+
+### Request
+
+```json
+{
+  "nickname": "나의닉네임",
+  "profileImageUrl": "https://cdn.example.com/profiles/profile-image.jpg",
+  "gender": "FEMALE",
+  "birthDate": "2000-01-01",
+  "joinPath": "INSTAGRAM",
+  "friendInviteCode": "ABCDE-FG12"
+}
+```
+
+| 필드 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- |
+| nickname | String | ✅ | 닉네임. 2~12자 |
+| profileImageUrl | String |  | 프로필 이미지 URL |
+| gender | ProfileGender | ✅ | `FEMALE`, `MALE`, `OTHER` |
+| birthDate | String | ✅ | 생년월일. `yyyy-MM-dd` |
+| joinPath | String |  | 가입 경로 |
+| friendInviteCode | String |  | 친구 초대코드 |
+
+### Response
+
+```json
+{
+  "profileId": 1,
+  "nickname": "나의닉네임",
+  "profileImageUrl": "https://cdn.example.com/profiles/profile-image.jpg",
+  "gender": "FEMALE",
+  "birthDate": "2000-01-01",
+  "joinPath": "INSTAGRAM",
+  "invitedByProfileId": 2,
+  "inviteRewardPick": 100,
+  "signUpStatus": "NICKNAMEDONE"
+}
+```
+
+| 필드 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- |
+| profileId | Long | ✅ | 프로필 식별값 |
+| nickname | String | ✅ | 닉네임 |
+| profileImageUrl | String |  | 프로필 이미지 URL |
+| gender | ProfileGender | ✅ | 저장된 성별 |
+| birthDate | String | ✅ | 생년월일. `yyyy-MM-dd` |
+| joinPath | String |  | 가입 경로 |
+| invitedByProfileId | Long |  | 초대코드 주인의 프로필 식별값 |
+| inviteRewardPick | int | ✅ | 이번 요청에서 지급된 가입 보너스 Pick |
+| signUpStatus | SignUpStatus | ✅ | 온보딩 진행 상태 |
 
 ## 닉네임 중복 확인
 

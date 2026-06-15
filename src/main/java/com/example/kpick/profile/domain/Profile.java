@@ -28,6 +28,8 @@ public class Profile {
     private String nickname;
     private String profileImageUrl;
     private boolean gender;
+    @Enumerated(EnumType.STRING)
+    private ProfileGender profileGender;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     private LocalDate birthDate;
@@ -36,6 +38,8 @@ public class Profile {
     private Long totalMissionPoint;
     private Long activityPoint;
     private String inviteCode;
+    private Long invitedByProfileId;
+    private String joinPath;
 
     @Builder.Default
     private SignUpStatus signUpStatus = SignUpStatus.NULL;
@@ -111,6 +115,41 @@ public class Profile {
         this.profileImageUrl = profileImageUrl.trim();
     }
 
+    public void completeOnboarding(
+            String nickname,
+            String profileImageUrl,
+            ProfileGender gender,
+            LocalDate birthDate,
+            String joinPath
+    ) {
+        updateNickname(nickname);
+        if (profileImageUrl != null && !profileImageUrl.isBlank()) {
+            this.profileImageUrl = profileImageUrl.trim();
+        }
+        if (gender == null) {
+            throw new IllegalArgumentException("gender is required.");
+        }
+        if (birthDate == null) {
+            throw new IllegalArgumentException("birthDate is required.");
+        }
+        this.profileGender = gender;
+        this.gender = gender == ProfileGender.MALE;
+        this.birthDate = birthDate;
+        this.joinPath = joinPath == null || joinPath.isBlank() ? null : joinPath.trim();
+        this.signUpStatus = SignUpStatus.NICKNAMEDONE;
+    }
+
+    public boolean hasReceivedInviteReward() {
+        return this.invitedByProfileId != null;
+    }
+
+    public void markInvitedBy(Long inviterProfileId) {
+        if (inviterProfileId == null) {
+            throw new IllegalArgumentException("inviterProfileId is required.");
+        }
+        this.invitedByProfileId = inviterProfileId;
+    }
+
     @PrePersist
     private void initializeInviteCode() {
         if (this.inviteCode == null || this.inviteCode.isBlank()) {
@@ -139,9 +178,9 @@ public class Profile {
     }
 
     private void checkSignUpStatus(){
-        if(!programInterests.isEmpty()){
+        if(programInterests != null && !programInterests.isEmpty()){
             this.signUpStatus = SignUpStatus.COMPLETE;
-        }else if(!nickname.isEmpty()){
+        }else if(nickname != null && !nickname.isEmpty()){
             this.signUpStatus = SignUpStatus.NICKNAMEDONE;
         }
     }
