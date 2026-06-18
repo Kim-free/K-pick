@@ -85,9 +85,6 @@ public class AuthService {
         AppUser appUser = appUserRepository.findByLoginTypeAndProviderId(loginType, providerProfile.getProviderId())
                 .orElse(null);
         boolean newUser = appUser == null;
-        if (!newUser) {
-            validateActiveAppUser(appUser);
-        }
 
         if (newUser) {
             appUser = appUserRepository.save(AppUser.createOAuthUser(
@@ -96,6 +93,8 @@ public class AuthService {
                     providerProfile.getProviderId(),
                     providerProfile.getEmailVerified()
             ));
+        } else if (appUser.isWithdrawn()) {
+            appUser.reactivate();
         }
         appUser.markLoggedIn();
         grantAdminRoleIfConfigured(appUser, providerProfile.getEmail());

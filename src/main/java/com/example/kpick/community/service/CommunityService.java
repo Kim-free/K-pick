@@ -5,6 +5,7 @@ import com.example.kpick.community.domain.CommunityCommentLike;
 import com.example.kpick.community.domain.CommunityPost;
 import com.example.kpick.community.domain.CommunityPostLike;
 import com.example.kpick.community.domain.CommunityPostType;
+import com.example.kpick.community.domain.CommunityPostView;
 import com.example.kpick.community.dto.req.CreateCommunityCommentRequest;
 import com.example.kpick.community.dto.req.CreateCommunityPostRequest;
 import com.example.kpick.community.dto.req.ToggleCommunityLikeRequest;
@@ -15,6 +16,7 @@ import com.example.kpick.community.dto.res.CommunityPostResponse;
 import com.example.kpick.community.repository.CommunityCommentLikeRepository;
 import com.example.kpick.community.repository.CommunityCommentRepository;
 import com.example.kpick.community.repository.CommunityPostLikeRepository;
+import com.example.kpick.community.repository.CommunityPostViewRepository;
 import com.example.kpick.community.thread.domain.Thread;
 import com.example.kpick.community.thread.dto.req.CreateThreadRequest;
 import com.example.kpick.community.thread.dto.req.UpdateThreadRequest;
@@ -62,6 +64,7 @@ public class CommunityService {
     private final UserVoteSelectionRepository userVoteSelectionRepository;
     private final CommunityCommentRepository communityCommentRepository;
     private final CommunityPostLikeRepository communityPostLikeRepository;
+    private final CommunityPostViewRepository communityPostViewRepository;
     private final CommunityCommentLikeRepository communityCommentLikeRepository;
     private final ProgramRepository programRepository;
     private final ProfileRepository profileRepository;
@@ -173,7 +176,7 @@ public class CommunityService {
     @Transactional
     public Object getCommunityPostDetails(CommunityPostType postType, Long postId, Long profileId) {
         return switch (postType) {
-            case THREAD -> getThreadDetails(postId);
+            case THREAD -> getThreadDetails(postId, profileId);
             case USER_VOTE -> getUserVoteDetails(postId, profileId);
         };
     }
@@ -196,10 +199,10 @@ public class CommunityService {
     }
 
     @Transactional
-    public ThreadDetailsResponse getThreadDetails(Long threadId) {
+    public ThreadDetailsResponse getThreadDetails(Long threadId, Long profileId) {
         Thread thread = findThread(threadId);
         assertVisible(thread);
-        thread.increaseViewCount();
+        increaseViewCountIfFirstView(CommunityPostType.THREAD, threadId, profileId, thread);
 
         Program program = findProgram(thread.getProgramId());
         Mission mission = thread.getMissionId() == null ? null : findMission(thread.getMissionId());
@@ -302,7 +305,7 @@ public class CommunityService {
     public UserVoteDetailsResponse getUserVoteDetails(Long userVoteId, Long profileId) {
         UserVote userVote = findUserVote(userVoteId);
         assertVisible(userVote);
-        userVote.increaseViewCount();
+        increaseViewCountIfFirstView(CommunityPostType.USER_VOTE, userVoteId, profileId, userVote);
         return toUserVoteDetails(userVoteId, userVote, profileId);
     }
 
@@ -445,6 +448,14 @@ public class CommunityService {
                 .map(UserVoteSelection::getUserVoteOption)
                 .orElse(null);
         return UserVoteDetailsResponse.from(userVote, findProfile(userVote.getProfileId()), options, selectedOption, getComments(CommunityPostType.USER_VOTE, userVoteId));
+    }
+
+    private void increaseViewCountIfFirstView(CommunityPostType postType, Long postId, Long profileId, CommunityPost post) {
+        if (profileId == null || communityPostViewRepository.existsByPostTypeAndPostIdAndProfileId(postType, postId, profileId)) {
+            return;
+        }
+        communityPostViewRepository.save(CommunityPostView.create(postType, postId, profileId));
+        post.increaseViewCount();
     }
 
     private List<CommunityCommentResponse> getComments(CommunityPostType postType, Long postId) {

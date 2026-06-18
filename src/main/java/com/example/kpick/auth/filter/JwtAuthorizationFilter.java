@@ -60,6 +60,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         return "OPTIONS".equalsIgnoreCase(request.getMethod())
                 || path.startsWith("/api/auth/")
+                || path.startsWith("/v1/ads/admob/callback")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/error");

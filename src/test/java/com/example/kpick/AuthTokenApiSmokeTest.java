@@ -3,6 +3,8 @@ package com.example.kpick;
 import com.example.kpick.appUser.domain.AppUser;
 import com.example.kpick.appUser.domain.LoginType;
 import com.example.kpick.community.domain.CommunityPostType;
+import com.example.kpick.community.thread.repository.ThreadRepository;
+import com.example.kpick.community.uservote.repository.UserVoteRepository;
 import com.example.kpick.mission.domain.Mission;
 import com.example.kpick.mission.domain.MissionOption;
 import com.example.kpick.mission.domain.MissionState;
@@ -34,6 +36,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -59,6 +62,12 @@ class AuthTokenApiSmokeTest {
     @Autowired
     private MissionOptionRepository missionOptionRepository;
 
+    @Autowired
+    private ThreadRepository threadRepository;
+
+    @Autowired
+    private UserVoteRepository userVoteRepository;
+
     @Test
     void appUserId로_발급한_토큰으로_일반_api들을_호출할_수_있다() throws Exception {
         TestFixture fixture = createFixture();
@@ -66,7 +75,7 @@ class AuthTokenApiSmokeTest {
 
         callReadApis(accessToken, fixture);
         callProfileApis(accessToken, fixture);
-        callBenefitApis(accessToken);
+        callBenefitApis(accessToken, fixture);
         callNotificationApis(accessToken);
         callMissionApis(accessToken, fixture);
         callCommunityApis(accessToken, fixture);
@@ -94,6 +103,8 @@ class AuthTokenApiSmokeTest {
                 "{\"nickname\":\"SmokeOnboard\",\"profileImageUrl\":\"https://example.com/onboarding.png\","
                         + "\"gender\":\"OTHER\",\"birthDate\":\"2000-01-01\",\"joinPath\":\"INSTAGRAM\","
                         + "\"friendInviteCode\":\"" + fixture.targetProfile.getInviteCode() + "\"}");
+        assertEquals(600L, getProfileCoin(fixture.profile.getId()));
+        assertEquals(200L, getProfileCoin(fixture.targetProfile.getId()));
         authorizedGet(accessToken, "/api/profiles/me/my-page");
         authorizedGet(accessToken, "/api/profiles/nickname/check?nickname=SmokeNickname");
         authorizedPatch(accessToken, "/api/profiles/me/nickname", "{\"nickname\":\"SmokeNick\"}");
@@ -107,10 +118,26 @@ class AuthTokenApiSmokeTest {
         authorizedPut(accessToken, "/api/profiles/me/program-interests", "{\"programIds\":[" + fixture.program.getId() + "]}");
     }
 
-    private void callBenefitApis(String accessToken) throws Exception {
+    private void callBenefitApis(String accessToken, TestFixture fixture) throws Exception {
         authorizedGet(accessToken, "/api/benefits/me");
         authorizedPost(accessToken, "/api/benefits/me/attendance", "{}");
         authorizedPost(accessToken, "/api/benefits/me/ad-reward", "{}");
+        long coinBeforeAdMobCallback = getProfileCoin(fixture.profile.getId());
+        String adMobCallbackUrl = "/v1/ads/admob/callback"
+                + "?user_id=" + fixture.profile.getId()
+                + "&reward_amount=7"
+                + "&reward_item=Pick"
+                + "&ad_network=admob"
+                + "&ad_unit=test-ad-unit"
+                + "&transaction_id=smoke-admob-transaction"
+                + "&signature=abcdefghijklmnopqrstuvwxyz"
+                + "&key_id=test-key"
+                + "&timestamp=1760000000000";
+        mockMvc.perform(get(adMobCallbackUrl))
+                .andExpect(status().isOk());
+        mockMvc.perform(get(adMobCallbackUrl))
+                .andExpect(status().isOk());
+        assertEquals(coinBeforeAdMobCallback + 7L, getProfileCoin(fixture.profile.getId()));
     }
 
     private void callNotificationApis(String accessToken) throws Exception {
@@ -137,18 +164,30 @@ class AuthTokenApiSmokeTest {
                         + ",\"title\":\"테스트 스레드\",\"description\":\"테스트 스레드 내용\",\"isNicknamePublic\":true,\"imageUrls\":[]}"), "postId");
 
         authorizedGet(accessToken, "/api/community/posts/" + threadPostId + "?postType=THREAD");
+        assertEquals(1, getThreadViewCount(threadPostId));
+        authorizedGet(accessToken, "/api/community/posts/" + threadPostId + "?postType=THREAD");
+        assertEquals(1, getThreadViewCount(threadPostId));
         authorizedPatch(accessToken, "/api/community/THREAD/" + threadPostId,
                 "{\"title\":\"수정된 테스트 스레드\",\"description\":\"수정된 내용\"}");
         authorizedPost(accessToken, "/api/community/THREAD/" + threadPostId + "/likes", "{}");
+        assertEquals(1, getThreadViewCount(threadPostId));
+        authorizedPost(accessToken, "/api/community/THREAD/" + threadPostId + "/likes", "{}");
+        assertEquals(1, getThreadViewCount(threadPostId));
         Long commentId = extractLong(authorizedPost(accessToken, "/api/community/THREAD/" + threadPostId + "/comments",
                 "{\"content\":\"테스트 댓글\"}"), "communityCommentId");
         authorizedPost(accessToken, "/api/community/THREAD/comments/" + commentId + "/likes", "{}");
+        assertEquals(1, getThreadViewCount(threadPostId));
 
         Long userVotePostId = extractLong(authorizedPost(accessToken, "/api/community",
                 "{\"postType\":\"USER_VOTE\",\"programId\":" + fixture.program.getId()
                         + ",\"title\":\"테스트 유저투표\",\"description\":\"투표 내용\",\"options\":[{\"content\":\"A\"},{\"content\":\"B\"}]}"), "postId");
         fixture.reportTargetPostId = userVotePostId;
         JsonNode userVoteDetails = objectMapper.readTree(authorizedGet(accessToken, "/api/community/posts/" + userVotePostId + "?postType=USER_VOTE"));
+        assertEquals(1, getUserVoteViewCount(userVotePostId));
+        authorizedGet(accessToken, "/api/community/posts/" + userVotePostId + "?postType=USER_VOTE");
+        assertEquals(1, getUserVoteViewCount(userVotePostId));
+        authorizedPost(accessToken, "/api/community/USER_VOTE/" + userVotePostId + "/likes", "{}");
+        assertEquals(1, getUserVoteViewCount(userVotePostId));
         Long userVoteOptionId = userVoteDetails.get("options").get(0).get("userVoteOptionId").asLong();
         authorizedPost(accessToken, "/api/user-votes/" + userVotePostId + "/vote", "{\"userVoteOptionId\":" + userVoteOptionId + "}");
         authorizedGet(accessToken, "/api/user-votes/" + userVotePostId + "/result");
@@ -290,6 +329,24 @@ class AuthTokenApiSmokeTest {
             throw new IllegalStateException("Missing field: " + fieldName + ", json=" + json);
         }
         return value.asLong();
+    }
+
+    private int getThreadViewCount(Long threadId) {
+        return threadRepository.findById(threadId)
+                .orElseThrow(() -> new IllegalStateException("Missing thread: " + threadId))
+                .getViewCount();
+    }
+
+    private int getUserVoteViewCount(Long userVoteId) {
+        return userVoteRepository.findById(userVoteId)
+                .orElseThrow(() -> new IllegalStateException("Missing user vote: " + userVoteId))
+                .getViewCount();
+    }
+
+    private long getProfileCoin(Long profileId) {
+        return profileRepository.findById(profileId)
+                .orElseThrow(() -> new IllegalStateException("Missing profile: " + profileId))
+                .getCoin();
     }
 
     private TestFixture createFixture() {

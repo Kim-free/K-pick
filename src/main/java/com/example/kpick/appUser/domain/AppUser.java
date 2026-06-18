@@ -83,4 +83,9 @@ public class AppUser {
         this.withdrawn = true;
         this.withdrawnAt = LocalDateTime.now();
     }
+
+    public void reactivate() {
+        this.withdrawn = false;
+        this.withdrawnAt = null;
+    }
 }

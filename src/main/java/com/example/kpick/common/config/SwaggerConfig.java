@@ -24,6 +24,9 @@ public class SwaggerConfig {
                         .version("v1"))
                 .servers(List.of(
                         new Server()
+                                .url("https://kpick.store")
+                                .description("Production server"),
+                        new Server()
                                 .url("http://localhost:8080")
                                 .description("Local server")
                 ))

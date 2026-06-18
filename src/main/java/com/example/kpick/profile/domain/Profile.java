@@ -33,7 +33,7 @@ public class Profile {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     private LocalDate birthDate;
-    private Long coin;
+    private Long coin = 100L;
     private Long missionPoint;
     private Long totalMissionPoint;
     private Long activityPoint;
