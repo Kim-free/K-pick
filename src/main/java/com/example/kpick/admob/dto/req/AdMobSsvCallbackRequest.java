@@ -4,13 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.Map;
-
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdMobSsvCallbackRequest {
     private Long userId;
+    private String rawUserId;
     private Long rewardAmount;
     private String rewardItem;
     private String adNetwork;
@@ -20,32 +19,33 @@ public class AdMobSsvCallbackRequest {
     private String keyId;
     private Long timestamp;
 
-    public static AdMobSsvCallbackRequest from(Map<String, String> queryParameters) {
-        String userId = required(queryParameters, "user_id");
-        String rewardAmount = required(queryParameters, "reward_amount");
-        String rewardItem = required(queryParameters, "reward_item");
-        String adNetwork = required(queryParameters, "ad_network");
-        String adUnit = required(queryParameters, "ad_unit");
-        String transactionId = required(queryParameters, "transaction_id");
-        String signature = required(queryParameters, "signature");
-        String keyId = required(queryParameters, "key_id");
-        String timestamp = required(queryParameters, "timestamp");
-
+    public static AdMobSsvCallbackRequest of(
+            String userId,
+            String rewardAmount,
+            String rewardItem,
+            String adNetwork,
+            String adUnit,
+            String transactionId,
+            String signature,
+            String keyId,
+            String timestamp
+    ) {
+        String normalizedUserId = required(userId, "user_id");
         return new AdMobSsvCallbackRequest(
-                parseLong(userId, "user_id"),
-                parsePositiveLong(rewardAmount, "reward_amount"),
-                rewardItem,
-                adNetwork,
-                adUnit,
-                transactionId,
-                signature,
-                keyId,
-                parseLong(timestamp, "timestamp")
+                parseLong(normalizedUserId, "user_id"),
+                normalizedUserId,
+                parsePositiveLong(required(rewardAmount, "reward_amount"), "reward_amount"),
+                required(rewardItem, "reward_item"),
+                required(adNetwork, "ad_network"),
+                required(adUnit, "ad_unit"),
+                required(transactionId, "transaction_id"),
+                required(signature, "signature"),
+                required(keyId, "key_id"),
+                parseLong(required(timestamp, "timestamp"), "timestamp")
         );
     }
 
-    private static String required(Map<String, String> queryParameters, String fieldName) {
-        String value = queryParameters.get(fieldName);
+    private static String required(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + " is required.");
         }

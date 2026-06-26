@@ -19,7 +19,17 @@ public class AuthController {
 
     @PostMapping("/apple")
     public ResponseEntity<AuthResponse> loginWithApple(@RequestBody OAuthLoginRequest request) {
-        return ResponseEntity.ok(authService.loginWithApple(request));
+        return ResponseEntity.ok(authService.loginWithAppleIos(request));
+    }
+
+    @PostMapping("/apple/ios")
+    public ResponseEntity<AuthResponse> loginWithAppleIos(@RequestBody OAuthLoginRequest request) {
+        return ResponseEntity.ok(authService.loginWithAppleIos(request));
+    }
+
+    @PostMapping("/apple/android")
+    public ResponseEntity<AuthResponse> loginWithAppleAndroid(@RequestBody OAuthLoginRequest request) {
+        return ResponseEntity.ok(authService.loginWithAppleAndroid(request));
     }
 
     @PostMapping("/google")

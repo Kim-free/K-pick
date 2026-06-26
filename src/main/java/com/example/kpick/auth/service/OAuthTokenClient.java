@@ -29,8 +29,8 @@ public class OAuthTokenClient {
     @Value("${oauth2.apple.client-id}")
     private String appleClientId;
 
-    @Value("${oauth2.apple.redirect-uri:}")
-    private String appleRedirectUri;
+    @Value("${oauth2.apple.android-redirect-uri:${oauth2.apple.redirect-uri:}}")
+    private String appleAndroidRedirectUri;
 
     @Value("${oauth2.google.client-id}")
     private String googleClientId;
@@ -54,13 +54,22 @@ public class OAuthTokenClient {
         this.appleClientSecretProvider = appleClientSecretProvider;
     }
 
-    public OAuthTokenResponse exchangeAppleCode(String authorizationCode) {
+    public OAuthTokenResponse exchangeAppleIosCode(String authorizationCode) {
         Map<String, String> parameters = new LinkedHashMap<>();
         parameters.put("client_id", appleClientId);
         parameters.put("client_secret", appleClientSecretProvider.createClientSecret());
         parameters.put("code", authorizationCode);
         parameters.put("grant_type", "authorization_code");
-        putIfNotBlank(parameters, "redirect_uri", appleRedirectUri);
+        return requestToken(APPLE_TOKEN_URL, parameters);
+    }
+
+    public OAuthTokenResponse exchangeAppleAndroidCode(String authorizationCode) {
+        Map<String, String> parameters = new LinkedHashMap<>();
+        parameters.put("client_id", appleClientId);
+        parameters.put("client_secret", appleClientSecretProvider.createClientSecret());
+        parameters.put("code", authorizationCode);
+        parameters.put("grant_type", "authorization_code");
+        putIfNotBlank(parameters, "redirect_uri", appleAndroidRedirectUri);
         return requestToken(APPLE_TOKEN_URL, parameters);
     }
 

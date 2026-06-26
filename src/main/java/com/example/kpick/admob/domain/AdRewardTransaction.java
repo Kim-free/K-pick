@@ -26,6 +26,7 @@ public class AdRewardTransaction {
     private Long id;
 
     private Long userId;
+    private String rawUserId;
 
     @Column(nullable = false, unique = true)
     private String transactionId;
@@ -43,6 +44,7 @@ public class AdRewardTransaction {
     public static AdRewardTransaction completed(AdMobSsvCallbackRequest request) {
         return AdRewardTransaction.builder()
                 .userId(request.getUserId())
+                .rawUserId(request.getRawUserId())
                 .transactionId(request.getTransactionId())
                 .adNetwork(request.getAdNetwork())
                 .adUnit(request.getAdUnit())

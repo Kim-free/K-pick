@@ -16,6 +16,8 @@ import java.util.concurrent.ThreadLocalRandom;
 @Getter
 @AllArgsConstructor @NoArgsConstructor @Builder
 public class Profile {
+    public static final long INITIAL_COIN = 100L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -33,10 +35,14 @@ public class Profile {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     private LocalDate birthDate;
-    private Long coin = 100L;
-    private Long missionPoint;
-    private Long totalMissionPoint;
-    private Long activityPoint;
+    @Builder.Default
+    private Long coin = INITIAL_COIN;
+    @Builder.Default
+    private Long missionPoint = 0L;
+    @Builder.Default
+    private Long totalMissionPoint = 0L;
+    @Builder.Default
+    private Long activityPoint = 0L;
     private String inviteCode;
     private Long invitedByProfileId;
     private String joinPath;
@@ -151,7 +157,19 @@ public class Profile {
     }
 
     @PrePersist
-    private void initializeInviteCode() {
+    private void initializeDefaultValues() {
+        if (this.coin == null) {
+            this.coin = INITIAL_COIN;
+        }
+        if (this.missionPoint == null) {
+            this.missionPoint = 0L;
+        }
+        if (this.totalMissionPoint == null) {
+            this.totalMissionPoint = 0L;
+        }
+        if (this.activityPoint == null) {
+            this.activityPoint = 0L;
+        }
         if (this.inviteCode == null || this.inviteCode.isBlank()) {
             this.inviteCode = generateInviteCode();
         }

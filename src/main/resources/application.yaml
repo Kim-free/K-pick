@@ -36,6 +36,7 @@ oauth2:
     key-id:
     private-key-path: classpath:keys/AuthKey_ABC123XYZ.p8
     redirect-uri: http://localhost:3000/auth/apple/callback
+    android-redirect-uri: http://localhost:3000/auth/apple/callback
   google:
     client-id:
     client-secret:

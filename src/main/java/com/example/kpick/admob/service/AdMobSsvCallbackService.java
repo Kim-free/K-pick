@@ -38,7 +38,7 @@ public class AdMobSsvCallbackService {
         if (profile == null) {
             // AdMob may retry non-2xx responses. Return 200 and skip reward so an invalid user_id
             // does not keep retrying indefinitely. Monitor logs for these cases.
-            log.warn("AdMob SSV callback user not found. userId={}, transactionId={}", request.getUserId(), request.getTransactionId());
+            log.warn("AdMob SSV callback user not found. userId={}, rawUserId={}, transactionId={}", request.getUserId(), request.getRawUserId(), request.getTransactionId());
             return;
         }
 
@@ -63,7 +63,8 @@ public class AdMobSsvCallbackService {
 
     private void logCallback(AdMobSsvCallbackRequest request) {
         log.info(
-                "AdMob SSV callback received. user_id={}, reward_amount={}, reward_item={}, ad_network={}, ad_unit={}, transaction_id={}, signature={}, key_id={}, timestamp={}",
+                "AdMob SSV callback received. user_id={}, parsed_profile_id={}, reward_amount={}, reward_item={}, ad_network={}, ad_unit={}, transaction_id={}, signature={}, key_id={}, timestamp={}",
+                request.getRawUserId(),
                 request.getUserId(),
                 request.getRewardAmount(),
                 request.getRewardItem(),

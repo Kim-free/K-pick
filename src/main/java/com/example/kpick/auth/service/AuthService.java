@@ -31,9 +31,20 @@ public class AuthService {
     private boolean testTokenEnabled;
 
     @Transactional
-    public AuthResponse loginWithApple(OAuthLoginRequest request) {
+    public AuthResponse loginWithAppleIos(OAuthLoginRequest request) {
         validateOAuthLoginRequest(request);
-        OAuthTokenResponse tokenResponse = oAuthTokenClient.exchangeAppleCode(request.getAuthorizationCode());
+        OAuthTokenResponse tokenResponse = oAuthTokenClient.exchangeAppleIosCode(request.getAuthorizationCode());
+        return loginWithAppleToken(tokenResponse);
+    }
+
+    @Transactional
+    public AuthResponse loginWithAppleAndroid(OAuthLoginRequest request) {
+        validateOAuthLoginRequest(request);
+        OAuthTokenResponse tokenResponse = oAuthTokenClient.exchangeAppleAndroidCode(request.getAuthorizationCode());
+        return loginWithAppleToken(tokenResponse);
+    }
+
+    private AuthResponse loginWithAppleToken(OAuthTokenResponse tokenResponse) {
         AppleTokenClaims claims = appleIdentityTokenParser.parseAndValidate(tokenResponse.getIdentityToken());
         return loginOAuth(LoginType.APPLE, new OAuthProviderProfile(
                 claims.getSubject(),
@@ -118,10 +129,6 @@ public class AuthService {
         return profileRepository.findByAppUserId(appUserId)
                 .orElseGet(() -> profileRepository.save(Profile.builder()
                         .appUserId(appUserId)
-                        .coin(0L)
-                        .missionPoint(0L)
-                        .totalMissionPoint(0L)
-                        .activityPoint(0L)
                         .signUpStatus(SignUpStatus.NULL)
                         .build()));
     }
