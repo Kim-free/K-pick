@@ -38,9 +38,11 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse loginWithAppleAndroid(OAuthLoginRequest request) {
-        validateOAuthLoginRequest(request);
-        OAuthTokenResponse tokenResponse = oAuthTokenClient.exchangeAppleAndroidCode(request.getAuthorizationCode());
+    public AuthResponse loginWithAppleAndroidCallback(String authorizationCode) {
+        if (authorizationCode == null || authorizationCode.isBlank()) {
+            throw new IllegalArgumentException("authorizationCode is required.");
+        }
+        OAuthTokenResponse tokenResponse = oAuthTokenClient.exchangeAppleAndroidCode(authorizationCode);
         return loginWithAppleToken(tokenResponse);
     }
 

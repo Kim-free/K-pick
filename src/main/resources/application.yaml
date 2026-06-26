@@ -37,6 +37,7 @@ oauth2:
     private-key-path: classpath:keys/AuthKey_ABC123XYZ.p8
     redirect-uri: http://localhost:3000/auth/apple/callback
     android-redirect-uri: http://localhost:3000/auth/apple/callback
+    android-deep-link-uri: picktory://auth/callback
   google:
     client-id:
     client-secret:

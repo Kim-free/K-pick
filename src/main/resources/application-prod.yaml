@@ -49,6 +49,7 @@ oauth2:
     private-key-path: ${APPLE_PRIVATE_KEY_PATH}
     redirect-uri: ${APPLE_REDIRECT_URI:}
     android-redirect-uri: ${APPLE_ANDROID_REDIRECT_URI:${APPLE_REDIRECT_URI:}}
+    android-deep-link-uri: ${APPLE_ANDROID_DEEP_LINK_URI:picktory://auth/callback}
   google:
     client-id: ${GOOGLE_CLIENT_ID}
     client-secret: ${GOOGLE_CLIENT_SECRET:}
