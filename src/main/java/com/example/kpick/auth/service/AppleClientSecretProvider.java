@@ -40,6 +40,13 @@ public class AppleClientSecretProvider {
     }
 
     public String createClientSecret() {
+        return createClientSecret(clientId);
+    }
+
+    public String createClientSecret(String subjectClientId) {
+        if (subjectClientId == null || subjectClientId.isBlank()) {
+            throw new IllegalArgumentException("Apple clientId is required.");
+        }
         long issuedAt = Instant.now().getEpochSecond();
         long expiration = issuedAt + 300;
         String header = "{\"alg\":\"ES256\",\"kid\":\"" + keyId + "\"}";
@@ -48,7 +55,7 @@ public class AppleClientSecretProvider {
                 + "\"iat\":" + issuedAt + ","
                 + "\"exp\":" + expiration + ","
                 + "\"aud\":\"" + APPLE_ISSUER + "\","
-                + "\"sub\":\"" + clientId + "\""
+                + "\"sub\":\"" + subjectClientId + "\""
                 + "}";
         String unsignedToken = base64Url(header) + "." + base64Url(payload);
         return unsignedToken + "." + sign(unsignedToken);

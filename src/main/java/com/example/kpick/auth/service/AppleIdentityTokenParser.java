@@ -5,7 +5,9 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,11 +20,22 @@ public class AppleIdentityTokenParser {
     @Value("${oauth2.apple.client-id}")
     private String clientId;
 
+    @Value("${oauth2.apple.services-id:${oauth2.apple.client-id}}")
+    private String servicesId;
+
     public AppleIdentityTokenParser(AppleIdentityTokenVerifier appleIdentityTokenVerifier) {
         this.appleIdentityTokenVerifier = appleIdentityTokenVerifier;
     }
 
     public AppleTokenClaims parseAndValidate(String identityToken) {
+        return parseAndValidate(identityToken, clientId);
+    }
+
+    public AppleTokenClaims parseAndValidateAllowingServicesId(String identityToken) {
+        return parseAndValidate(identityToken, clientId, servicesId);
+    }
+
+    private AppleTokenClaims parseAndValidate(String identityToken, String... allowedAudiences) {
         if (identityToken == null || identityToken.isBlank()) {
             throw new IllegalArgumentException("identityToken is required.");
         }
@@ -45,23 +58,33 @@ public class AppleIdentityTokenParser {
                 extractString(payloadJson, "aud"),
                 extractLong(payloadJson, "exp")
         );
-        validateClaims(claims);
+        validateClaims(claims, allowedAudiences);
         return claims;
     }
 
-    private void validateClaims(AppleTokenClaims claims) {
+    private void validateClaims(AppleTokenClaims claims, String... allowedAudiences) {
         if (claims.getSubject() == null || claims.getSubject().isBlank()) {
             throw new IllegalArgumentException("Apple providerId is missing.");
         }
         if (!APPLE_ISSUER.equals(claims.getIssuer())) {
             throw new IllegalArgumentException("Invalid Apple token issuer.");
         }
-        if (!clientId.equals(claims.getAudience())) {
+        if (!containsAudience(allowedAudiences, claims.getAudience())) {
             throw new IllegalArgumentException("Invalid Apple token audience.");
         }
         if (claims.getExpiration() == null || claims.getExpiration() < Instant.now().getEpochSecond()) {
             throw new IllegalArgumentException("Apple identityToken is expired.");
         }
+    }
+
+    private boolean containsAudience(String[] allowedAudiences, String audience) {
+        if (audience == null || audience.isBlank()) {
+            return false;
+        }
+        List<String> audiences = Arrays.stream(allowedAudiences)
+                .filter(value -> value != null && !value.isBlank())
+                .toList();
+        return audiences.contains(audience);
     }
 
     private String extractString(String json, String fieldName) {

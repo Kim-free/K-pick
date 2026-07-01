@@ -34,7 +34,7 @@ public class AuthService {
     public AuthResponse loginWithAppleIos(OAuthLoginRequest request) {
         validateOAuthLoginRequest(request);
         OAuthTokenResponse tokenResponse = oAuthTokenClient.exchangeAppleIosCode(request.getAuthorizationCode());
-        return loginWithAppleToken(tokenResponse);
+        return loginWithAppleIosToken(tokenResponse);
     }
 
     @Transactional
@@ -43,11 +43,20 @@ public class AuthService {
             throw new IllegalArgumentException("authorizationCode is required.");
         }
         OAuthTokenResponse tokenResponse = oAuthTokenClient.exchangeAppleAndroidCode(authorizationCode);
-        return loginWithAppleToken(tokenResponse);
+        return loginWithAppleAndroidToken(tokenResponse);
     }
 
-    private AuthResponse loginWithAppleToken(OAuthTokenResponse tokenResponse) {
+    private AuthResponse loginWithAppleIosToken(OAuthTokenResponse tokenResponse) {
         AppleTokenClaims claims = appleIdentityTokenParser.parseAndValidate(tokenResponse.getIdentityToken());
+        return loginWithAppleClaims(claims);
+    }
+
+    private AuthResponse loginWithAppleAndroidToken(OAuthTokenResponse tokenResponse) {
+        AppleTokenClaims claims = appleIdentityTokenParser.parseAndValidateAllowingServicesId(tokenResponse.getIdentityToken());
+        return loginWithAppleClaims(claims);
+    }
+
+    private AuthResponse loginWithAppleClaims(AppleTokenClaims claims) {
         return loginOAuth(LoginType.APPLE, new OAuthProviderProfile(
                 claims.getSubject(),
                 claims.getEmail(),

@@ -2,6 +2,8 @@ package com.example.kpick.auth.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +20,7 @@ import java.util.Map;
 
 @Component
 public class OAuthTokenClient {
+    private static final Logger log = LoggerFactory.getLogger(OAuthTokenClient.class);
     private static final String APPLE_TOKEN_URL = "https://appleid.apple.com/auth/token";
     private static final String GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
     private static final String KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
@@ -28,6 +31,9 @@ public class OAuthTokenClient {
 
     @Value("${oauth2.apple.client-id}")
     private String appleClientId;
+
+    @Value("${oauth2.apple.services-id:${oauth2.apple.client-id}}")
+    private String appleServicesId;
 
     @Value("${oauth2.apple.android-redirect-uri:${oauth2.apple.redirect-uri:}}")
     private String appleAndroidRedirectUri;
@@ -57,7 +63,7 @@ public class OAuthTokenClient {
     public OAuthTokenResponse exchangeAppleIosCode(String authorizationCode) {
         Map<String, String> parameters = new LinkedHashMap<>();
         parameters.put("client_id", appleClientId);
-        parameters.put("client_secret", appleClientSecretProvider.createClientSecret());
+        parameters.put("client_secret", appleClientSecretProvider.createClientSecret(appleClientId));
         parameters.put("code", authorizationCode);
         parameters.put("grant_type", "authorization_code");
         return requestToken(APPLE_TOKEN_URL, parameters);
@@ -65,8 +71,8 @@ public class OAuthTokenClient {
 
     public OAuthTokenResponse exchangeAppleAndroidCode(String authorizationCode) {
         Map<String, String> parameters = new LinkedHashMap<>();
-        parameters.put("client_id", appleClientId);
-        parameters.put("client_secret", appleClientSecretProvider.createClientSecret());
+        parameters.put("client_id", appleServicesId);
+        parameters.put("client_secret", appleClientSecretProvider.createClientSecret(appleServicesId));
         parameters.put("code", authorizationCode);
         parameters.put("grant_type", "authorization_code");
         putIfNotBlank(parameters, "redirect_uri", appleAndroidRedirectUri);
@@ -103,6 +109,8 @@ public class OAuthTokenClient {
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                log.warn("OAuth token request failed. url={}, statusCode={}, responseBody={}",
+                        url, response.statusCode(), response.body());
                 throw new IllegalArgumentException("OAuth authorizationCode is invalid.");
             }
             JsonNode json = objectMapper.readTree(response.body());

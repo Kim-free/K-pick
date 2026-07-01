@@ -31,7 +31,8 @@ spring:
 
 oauth2:
   apple:
-    client-id: com.freshmilk.pictory
+    client-id: com.freshmilk.picktory
+    services-id: com.freshmilk.picktory.login
     team-id:
     key-id:
     private-key-path: classpath:keys/AuthKey_ABC123XYZ.p8

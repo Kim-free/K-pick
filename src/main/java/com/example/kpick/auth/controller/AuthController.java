@@ -5,6 +5,8 @@ import com.example.kpick.auth.dto.req.TestTokenRequest;
 import com.example.kpick.auth.dto.res.AuthResponse;
 import com.example.kpick.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,8 @@ import java.net.URI;
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
     private final AuthService authService;
 
     @Value("${oauth2.apple.android-deep-link-uri:picktory://auth/callback}")
@@ -59,15 +63,24 @@ public class AuthController {
             );
         }
 
-        AuthResponse authResponse = authService.loginWithAppleAndroidCallback(code);
-        return redirectToAppleAndroidDeepLink(
-                UriComponentsBuilder.fromUriString(appleAndroidDeepLinkUri)
-                        .queryParam("token", authResponse.getAccessToken())
-                        .queryParam("tokenType", authResponse.getTokenType())
-                        .queryParam("newUser", authResponse.isNewUser())
-                        .queryParam("signUpStatus", authResponse.getSignUpStatus())
-                        .queryParamIfPresent("state", java.util.Optional.ofNullable(blankToNull(state)))
-        );
+        try {
+            AuthResponse authResponse = authService.loginWithAppleAndroidCallback(code);
+            return redirectToAppleAndroidDeepLink(
+                    UriComponentsBuilder.fromUriString(appleAndroidDeepLinkUri)
+                            .queryParam("token", authResponse.getAccessToken())
+                            .queryParam("tokenType", authResponse.getTokenType())
+                            .queryParam("newUser", authResponse.isNewUser())
+                            .queryParam("signUpStatus", authResponse.getSignUpStatus())
+                            .queryParamIfPresent("state", java.util.Optional.ofNullable(blankToNull(state)))
+            );
+        } catch (RuntimeException exception) {
+            log.warn("Apple Android callback login failed.", exception);
+            return redirectToAppleAndroidDeepLink(
+                    UriComponentsBuilder.fromUriString(appleAndroidDeepLinkUri)
+                            .queryParam("error", "oauth_failed")
+                            .queryParamIfPresent("state", java.util.Optional.ofNullable(blankToNull(state)))
+            );
+        }
     }
 
     @PostMapping("/google")
