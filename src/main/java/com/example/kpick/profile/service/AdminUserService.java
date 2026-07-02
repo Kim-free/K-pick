@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +36,7 @@ public class AdminUserService {
     public List<AdminUserListResponse> getUsers(String keyword, AdminUserStatus userStatus) {
         return profileRepository.findAll().stream()
                 .map(this::toListResponse)
+                .flatMap(Optional::stream)
                 .filter(user -> matchesKeyword(user, keyword))
                 .filter(user -> userStatus == null || user.getUserStatus() == userStatus)
                 .toList();
@@ -72,17 +74,17 @@ public class AdminUserService {
         );
     }
 
-    private AdminUserListResponse toListResponse(Profile profile) {
-        AppUser appUser = findAppUser(profile.getAppUserId());
-        return new AdminUserListResponse(
-                profile.getId(),
-                profile.getNickname(),
-                appUser.getEmail(),
-                PointTier.from(profile.getTotalMissionPointValue()).getDisplayName(profile.getTotalMissionPointValue()),
-                profile.getCoin() == null ? 0L : profile.getCoin(),
-                appUser.getCreatedAt(),
-                resolveUserStatus(findCurrentSanction(profile.getId()))
-        );
+    private Optional<AdminUserListResponse> toListResponse(Profile profile) {
+        return appUserRepository.findById(profile.getAppUserId())
+                .map(appUser -> new AdminUserListResponse(
+                        profile.getId(),
+                        profile.getNickname(),
+                        appUser.getEmail(),
+                        PointTier.from(profile.getTotalMissionPointValue()).getDisplayName(profile.getTotalMissionPointValue()),
+                        profile.getCoin() == null ? 0L : profile.getCoin(),
+                        appUser.getCreatedAt(),
+                        resolveUserStatus(findCurrentSanction(profile.getId()))
+                ));
     }
 
     private int calculateCorrectRate(List<MissionHistoryResponse.MissionHistoryItemResponse> missions) {
