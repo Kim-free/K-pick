@@ -64,6 +64,11 @@ admin:
   emails: ${ADMIN_EMAILS:}
 
 auth:
+  dev-bypass:
+    enabled: ${AUTH_DEV_BYPASS_ENABLED:false}
+    app-user-id: ${AUTH_DEV_BYPASS_APP_USER_ID:1}
+    profile-id: ${AUTH_DEV_BYPASS_PROFILE_ID:1}
+    role: ${AUTH_DEV_BYPASS_ROLE:ADMIN}
   test-token:
     enabled: ${AUTH_TEST_TOKEN_ENABLED:true}
 

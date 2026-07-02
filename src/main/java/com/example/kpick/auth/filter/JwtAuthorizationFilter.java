@@ -8,6 +8,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -24,6 +25,18 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final AppUserRepository appUserRepository;
 
+    @Value("${auth.dev-bypass.enabled:false}")
+    private boolean devBypassEnabled;
+
+    @Value("${auth.dev-bypass.app-user-id:1}")
+    private Long devBypassAppUserId;
+
+    @Value("${auth.dev-bypass.profile-id:1}")
+    private Long devBypassProfileId;
+
+    @Value("${auth.dev-bypass.role:ADMIN}")
+    private AppUserRole devBypassRole;
+
     public JwtAuthorizationFilter(JwtProvider jwtProvider, AppUserRepository appUserRepository) {
         this.jwtProvider = jwtProvider;
         this.appUserRepository = appUserRepository;
@@ -36,6 +49,13 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
         try {
+            if (devBypassEnabled) {
+                request.setAttribute(APP_USER_ID_ATTRIBUTE, devBypassAppUserId);
+                request.setAttribute(PROFILE_ID_ATTRIBUTE, devBypassProfileId);
+                request.setAttribute(APP_USER_ROLE_ATTRIBUTE, devBypassRole);
+                filterChain.doFilter(request, response);
+                return;
+            }
             String accessToken = extractBearerToken(request);
             JwtClaims claims = jwtProvider.parseAndValidate(accessToken);
             if (isWithdrawnAppUser(claims)) {

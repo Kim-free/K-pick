@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
+@SpringBootTest(properties = "auth.dev-bypass.enabled=false")
 @AutoConfigureMockMvc
 @Transactional
 class AuthTokenApiSmokeTest {
